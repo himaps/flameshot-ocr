@@ -116,7 +116,7 @@ package is installed, dpkg refuses with a file conflict — remove it first:
 To build a deb by hand:
 
     sudo apt install g++ cmake pkg-config git qtbase5-dev libqt5svg5-dev \
-      qttools5-dev-tools libtesseract-dev libleptonica-dev
+      qttools5-dev qttools5-dev-tools libtesseract-dev libleptonica-dev
     cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
     make -C build -j$(nproc)
     make -C build install DESTDIR="$PWD/staging"
@@ -171,7 +171,7 @@ OCR 数据说明：离线包内含英文训练数据（`tesseract-ocr-eng`），
 4. **CMake configure 阶段有网络依赖（FetchContent）**。本项目在 configure 时现场克隆 Qt-Color-Widgets（GitLab）和 SingleApplication（GitHub）两个源码库，容器必须装 `git` 且能出外网，首次 configure 耗时主要花在这里；纯离线环境源码编译会直接失败，需预先 `git clone` 后改用本地路径。
 5. **OCR 依赖的 pkg-config 模块名**。CMake 找的是 `tesseract` 和 `lept` 两个模块，分别由 `libtesseract-dev` 和 `libleptonica-dev` 提供；bullseye 的 Tesseract 4.1.1 与本项目使用的 TessBaseAPI（`SetImage`/`GetUTF8Text`）完全兼容，无需追求更高版本。
 6. **离线闭包必须显式加入 tessdata 语言包**。`ldd` 只能看到共享库依赖，而 Tesseract 运行时还要读 traineddata 数据文件，它们在独立的架构无关包里（`tesseract-ocr-eng`、`tesseract-ocr-osd`）。漏掉的话依赖校验全绿，但 OCR 一律初始化失败——构建离线包时把这两个包显式塞进闭包起点。
-7. **lrelease 在构建期被调用**（Qt5LinguistTools 翻译），必须装 `qttools5-dev-tools`，否则 Release 构建会静默丢失翻译。
+7. **翻译工具链分属两个包**。`Qt5LinguistTools` 的 CMake 配置文件在 `qttools5-dev` 里，`lrelease` 可执行文件在 `qttools5-dev-tools` 里，两个都要装——只装后者会在 configure 期报 `Could not find a package configuration file provided by "Qt5LinguistTools"`；只装前者则构建期静默丢失翻译。
 8. **arm64 用原生 runner，不做交叉编译**。`ubuntu-24.04-arm` 对公共仓库免费，容器内直接原生构建，避免交叉工具链和 sysroot 的所有坑。唯一要注意：debian-slim 容器里的 pkg-config 不会自动搜索多架构目录，需要手动设 `PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig`。
 9. **容器里的 git 会报"dubious ownership"**。checkout 后工作区属主与容器 root 不一致时，`git describe` 乃至 CMakeLists 自己调用的 `git rev-parse` 都会失败；工作流在构建前统一 `git config --global --add safe.directory "$GITHUB_WORKSPACE"`。
 10. **dpkg 全程持锁** → `postinst` 无法嵌套 `dpkg -i`（见"离线环境安装"）。

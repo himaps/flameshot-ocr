@@ -70,11 +70,13 @@ jobs:
             done
             # Qt5 (Core/Gui/Widgets/Network/DBus/Svg/LinguistTools) + the OCR
             # stack: pkg-config modules "tesseract" and "lept" come from
-            # libtesseract-dev and libleptonica-dev.
+            # libtesseract-dev and libleptonica-dev. qttools5-dev provides the
+            # Qt5LinguistTools CMake config; qttools5-dev-tools provides the
+            # lrelease binary - both are needed.
             for attempt in 1 2 3; do
               if apt-get install -y --no-install-recommends -o Acquire::Retries=5 \
                 build-essential cmake pkg-config git curl ca-certificates \
-                qtbase5-dev libqt5svg5-dev qttools5-dev-tools \
+                qtbase5-dev libqt5svg5-dev qttools5-dev qttools5-dev-tools \
                 libtesseract-dev libleptonica-dev; then
                 break
               fi
