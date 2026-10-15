@@ -1,0 +1,35 @@
+-- The CXX compiler identification is GNU 10.2.1
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test Wall_FLAG_SUPPORTED
+-- Performing Test Wall_FLAG_SUPPORTED - Success
+-- Performing Test pedantic_FLAG_SUPPORTED
+-- Performing Test pedantic_FLAG_SUPPORTED - Success
+-- Performing Test Wextra_FLAG_SUPPORTED
+-- Performing Test Wextra_FLAG_SUPPORTED - Success
+CMake Warning at cmake/Cache.cmake:28 (message):
+  ccache is enabled but was not found.  Not using it
+Call Stack (most recent call first):
+  CMakeLists.txt:102 (include)
+
+
+CMake Error at /usr/lib/aarch64-linux-gnu/cmake/Qt5/Qt5Config.cmake:28 (find_package):
+  Could not find a package configuration file provided by "Qt5LinguistTools"
+  with any of the following names:
+
+    Qt5LinguistToolsConfig.cmake
+    qt5linguisttools-config.cmake
+
+  Add the installation prefix of "Qt5LinguistTools" to CMAKE_PREFIX_PATH or
+  set "Qt5LinguistTools_DIR" to a directory containing one of the above
+  files.  If "Qt5LinguistTools" provides a separate development package or
+  SDK, be sure it has been installed.
+Call Stack (most recent call first):
+  src/CMakeLists.txt:1 (find_package)
+
+
+-- Configuring incomplete, errors occurred!
+See also "/__w/flameshot-ocr/flameshot-ocr/build/CMakeFiles/CMakeOutput.log".
