@@ -187,10 +187,14 @@ jobs:
               [ -n "$p" ] && TOP="$TOP $p"
             done
             echo "offline deps direct closure:$TOP"
-            # ldd only sees shared libraries; the OCR engine also needs
-            # traineddata at runtime, which lives in separate arch-independent
-            # packages. Seed them explicitly or OCR fails on offline machines.
-            TOP="$TOP tesseract-ocr-eng tesseract-ocr-osd"
+            # ldd only sees shared libraries linked at startup. Two more
+            # runtime requirements are invisible to it: the OCR engine reads
+            # traineddata (arch-independent packages), and Qt loads SVG icon
+            # rendering as a dlopen'd plugin from libqt5svg5 - the binary's
+            # DT_NEEDED has no libQt5Svg because of --as-needed. Seed them
+            # explicitly or OCR and the toolbar icons break on offline
+            # machines.
+            TOP="$TOP tesseract-ocr-eng tesseract-ocr-osd libqt5svg5"
             # Expand to the full recursive Depends closure: target distros
             # (e.g. Kylin V20, Ubuntu 20.04 base) package some libraries under
             # different names, so the bundle must contain every indirect
