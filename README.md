@@ -98,12 +98,12 @@ cmake -S . -B build && cmake --build build --parallel
   
 ---
 
-## Deb packages (UOS / deepin)
+## Deb packages (UOS / deepin / Kylin)
 
 Releases are built on GitHub Actions with native runners (amd64 + arm64) inside
-a Debian bullseye container (glibc 2.31, matching the Kylin V20 target), then
-packaged manually with `dpkg-deb` without strict `Depends` — a UOS/deepin
-desktop already provides the Qt5 runtime. Install with:
+a Debian bullseye container (glibc 2.31, matching the Kylin V20 / V10 SP1
+target), then packaged manually with `dpkg-deb` without strict `Depends` — a
+UOS/deepin/Kylin desktop already provides the Qt5 runtime. Install with:
 
     sudo dpkg -i flameshot-ocr-*.deb
 
@@ -123,13 +123,21 @@ To build a deb by hand:
     # copy staging/. into pkg/flameshot-ocr_<version>_<arch>/ with a DEBIAN/control,
     # then: dpkg-deb --build --root-owner-group pkg/flameshot-ocr_<version>_<arch>
 
-Pushing a `v*` tag (e.g. `v12.1.0-ocr.1`) builds both architectures and
-publishes a GitHub release with the deb and tarball assets; pushing master
-runs the same build as a dual-architecture precheck.
+Pushing a `v*` tag (e.g. `v12.1.0-kylin.1`) builds both architectures and
+publishes a GitHub release with the deb and tarball assets (文件名格式：
+`flameshot-ocr-<版本>-kylin-<架构>[-offline].deb`); pushing master runs the
+same build as a dual-architecture precheck.
+
+发布前工作流强制执行四道质量门禁（细节见踩坑记录 13–16）：
+
+- **glibc 基线门禁**：`objdump` 扫描主程序最高 GLIBC 符号版本，超过 2.31 直接判失败，杜绝"在麒麟上启动即报 `GLIBC_2.3x not found`"的产物出厂；
+- **构建后载荷自检**：对每个 deb 跑 `dpkg-deb -c` 断言——常规包必须有主程序和 desktop 文件，离线包另加 `install-deps.sh` 和非空依赖闭包；
+- **真实麒麟验证（发布门禁）**：在钉了日期 tag 的真实麒麟容器 `ghcr.io/distrotwin/kylin:v10sp1-base-amd64-<日期>`（github.com/distrotwin/kylin，从麒麟公开 apt 归档自举）里，按离线用户流程装桌面运行库 → `dpkg -i` 离线包 → 跑 `install-deps.sh` → `ldd` 零缺失 → `eng.traineddata` 就位 → `flameshot --version` 可运行。Release 发布以该 job 通过为前置条件；
+- **注解诊断**：失败日志尾部重发为 `::error::`/`::warning::` 注解（logs API 对匿名请求 403，check-run 注解是公开 API，本机无凭据也能定位失败），完整日志同时兜底推 `ci-logs` 分支。
 
 ## 离线环境安装（offline install）
 
-Release 提供两个 deb 变体，按需二选一（文件名格式：`flameshot-ocr-<版本>-linux-<架构>[-offline].deb`，架构为 amd64 / aarch64）：
+Release 提供两个 deb 变体，按需二选一（文件名格式：`flameshot-ocr-<版本>-kylin-<架构>[-offline].deb`，架构为 amd64 / aarch64）：
 
 - `flameshot-ocr-<版本>-linux-<架构>.deb` — 常规包，适合已具备 Qt5 运行时的 UOS/deepin 桌面。
 - `flameshot-ocr-<版本>-linux-<架构>-offline.deb` — 离线包，在常规内容之外额外打包了运行时依赖闭包（`deps/*.deb`）、安装脚本和英文 Tesseract 训练数据。
@@ -150,7 +158,7 @@ OCR 数据说明：离线包内含英文训练数据（`tesseract-ocr-eng`），
 
 这是目标机上没有 Qt5/Tesseract 运行库，说明装的是**常规包**，或装了离线包但依赖安装没有执行。处理：
 
-1. 确认装的是 `-offline` 后缀的离线包，且架构与机器一致（`linux-aarch64` 对应 ARM64）；
+1. 确认装的是 `-offline` 后缀的离线包，且架构与机器一致（`kylin-aarch64` 对应 ARM64）；
 2. 执行一次 `sudo /usr/share/flameshot-ocr/install-deps.sh`，看到 `OK: all runtime libraries resolved` 即可正常运行；
 3. 若脚本报 `WARNING: these libraries are still missing`，把输出发回来排查。
 
@@ -177,6 +185,10 @@ OCR 数据说明：离线包内含英文训练数据（`tesseract-ocr-eng`），
 10. **dpkg 全程持锁** → `postinst` 无法嵌套 `dpkg -i`（见"离线环境安装"）。
 11. **离线依赖闭包必须递归展开 + 版本感知安装**。目标发行版对同一库可能用不同包名（麒麟/focal 的 libicu66 对 Debian 的 libicu63），只按 `ldd` 收一层依赖在离线机上 `dpkg -i` 会因 Depends 缺名而失败——构建时按 Depends 逐轮展开成完整闭包（不同名的库共存不冲突）；安装时按版本比较，系统库较新则保留、较旧或缺失才装包内的。
 12. **包名与二进制名分离**。deb 包名用 `flameshot-ocr` 以区别于发行版仓库的 `flameshot`，但二进制保持 `/usr/bin/flameshot` 不改名——改名会破坏桌面快捷键、脚本和文档里既有的 `flameshot gui` 调用方式。代价是与发行版 flameshot 包存在文件冲突，安装前需先卸载它。
+13. **构建后必须做载荷自检**。离线包构建步骤多（staging 拷贝、闭包下载、脚本生成），任何一步漏掉都会产出"看起来正常"的包——同门项目 pdfcraft 出过离线包只装了依赖闭包、没有应用本体的退化包（靠人眼对比尺寸才抓出）。现在工作流对每个 deb 跑 `dpkg-deb -c` 断言：常规包必须有主程序和 desktop 文件，离线包另加 `install-deps.sh` 和足量依赖 deb。注意 `dpkg-deb -c` 输出先落文件再 grep——**不要 `grep -q` 于管道**（pipefail 下首个匹配即退出，SIGPIPE 杀掉 dpkg-deb 生产端，匹配了也误报失败）。
+14. **postinst 对载荷缺失要大声报错**。若 `/usr/bin/flameshot` 不在，`ldd` 会静默输出空结果，"无缺失库"的判定会把坏包当健康包放行；脚本开头显式检查主程序存在，缺失即 `exit 1`，让 dpkg 把包标记为配置失败而不是假装装好了。
+15. **真实麒麟容器验证 + 钉日期 tag**。bullseye 只是 glibc 同基线的近似，"运行库假设"（包名与版本在麒麟源里成立）要靠真实归档检验：distrotwin/kylin 容器从麒麟公开 apt 源自举（`v10sp1` = 桌面 V10 SP1 2503，glibc 2.31 / GCC 9.3 / Ubuntu 20.04 血脉）。CI 必须钉带日期的 tag（如 `v10sp1-base-amd64-20260903`）——滚动 tag 会随重建漂移，`latest` 甚至会跨大版本把 glibc 从 2.31 推到 2.38。验证按离线用户真实路径走：装麒麟桌面运行库（同时验证了包名假设）→ `dpkg -i` 离线包 → 手动跑 `install-deps.sh`（容器无 systemd，恰好走文档写的手动回退路径）→ `ldd` 零缺失 → `eng.traineddata` 就位 → `flameshot --version`。Release 发布以该 job 通过为前置条件。
+16. **无凭据也能诊断 CI**。Actions logs API 对匿名请求 401/403，job 页面日志靠前端加载——本机无 gh CLI / token 时两者都读不到；**check-run annotations 是公开 API**。工作流在失败时把日志最后 30 行重发为 10 notice + 10 warning + 10 error 注解（每级每步上限 10 条，title 带"距末尾第几行"防合并），用 `commits/{sha}/check-runs` 匿名可读；静默 `set -e` 死亡用 `set -x` + `PS4='+L$LINENO: '` 让失败命令自己报行号。完整日志兜底推 `ci-logs` 分支。
 
 ## 复用本工作流（其他 Qt 项目）
 
@@ -185,6 +197,8 @@ OCR 数据说明：离线包内含英文训练数据（`tesseract-ocr-eng`），
 - 顶层产物名、control 里的 `Package`/`Description`、发布说明文本、`deps/` 与安装脚本的路径（全局替换 `flameshot-ocr` 即可）
 - "Install build dependencies" 换成项目真实的构建依赖；先在 packages.debian.org 按容器基线（当前 bullseye）确认是否有对应 `-dev` 包
 - 项目若也有"ldd 看不见的运行时数据"（词典、模型、资源包），参照离线包构建步骤里显式 seed 的做法加入闭包
+- glibc 门禁、载荷自检、注解诊断、ci-logs 兜底这四样与产品无关，原样保留即可
+- 目标机是麒麟 V10 SP1/V20 时保留 verify-on-kylin job（真实归档验证 + 发布门禁），按指南要求更新容器 tag 里的日期
 - 推送 master 做双架构预检；打 `v*` tag 自动构建并发布 Release
 
 ---

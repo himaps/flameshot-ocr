@@ -1,4 +1,13 @@
-name: release
+# Kylin V20 / V10 SP1 / UOS release: glibc-2.31 baseline debs, following the
+# deepin-screenshot packaging workflow and the 银河麒麟 domestic-adaptation
+# guide (real-Kylin verification job, payload self-checks, glibc gate,
+# annotation-based failure diagnostics).
+#
+# Native runners (no cross compilation) inside a Debian bullseye container.
+# Pushes to master build automatically; a v* tag also attaches the debs to
+# the tag's GitHub release (release is gated on the real-Kylin verify job);
+# any branch can be built on demand through workflow_dispatch.
+name: Kylin V20 / UOS release
 
 on:
   push:
@@ -10,13 +19,17 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: kylin-release-${{ github.ref }}
+  cancel-in-progress: false
+
 defaults:
   run:
     shell: bash
 
 jobs:
   build-deb:
-    name: Build ${{ matrix.osarch }} packages
+    name: Build kylin-${{ matrix.osarch }} packages
     strategy:
       fail-fast: false
       matrix:
@@ -24,19 +37,20 @@ jobs:
           - arch: arm64
             runner: ubuntu-24.04-arm
             multiarch: aarch64-linux-gnu
-            osarch: linux-aarch64
+            osarch: kylin-aarch64
           - arch: amd64
             runner: ubuntu-24.04
             multiarch: x86_64-linux-gnu
-            osarch: linux-amd64
-    # Native runners produce native builds, no cross compilation needed
+            osarch: kylin-amd64
+    # Native runners produce native builds. The container sets the glibc
+    # baseline: bullseye is 2.31, exactly Kylin V20's (Ubuntu 20.04 base,
+    # glibc 2.31-0kylin), and everything newer (UOS/deepin, Debian 11+)
+    # accepts the binaries too. For older UOS 20 (glibc 2.28) build on-device.
     runs-on: ${{ matrix.runner }}
-    # Build inside Debian bullseye: glibc 2.31 matches the Kylin V20 target
-    # (Ubuntu 20.04 base, glibc 2.31-0kylin) and still runs on anything newer
-    # (deepin 20/23, Debian 12). For even older UOS 20 (glibc 2.28) prefer an
-    # on-device build.
+    timeout-minutes: 150
     container: debian:bullseye-slim
     env:
+      DEBIAN_FRONTEND: noninteractive
       # The debian-slim container's pkg-config does not search the multiarch
       # pkgconfig directory on its own
       PKG_CONFIG_PATH: /usr/lib/${{ matrix.multiarch }}/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig
@@ -48,7 +62,8 @@ jobs:
           # bullseye has left regular security support: deb.debian.org still
           # serves the bullseye-security package index, but the .debs in its
           # pool are gone (404). Keep main on the fast deb.debian.org mirror
-          # and point only the security suite at archive.debian.org.
+          # and point only the security suite at archive.debian.org — the
+          # whole archive mirror rate-limits cloud runner IPs.
           sed -i 's|http://security.debian.org|http://archive.debian.org|g; s|http://deb.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list
           echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-valid-until
           cat /etc/apt/sources.list
@@ -86,7 +101,7 @@ jobs:
               fi
               sleep 30
             done
-          } 2>&1 | tee build.log
+          } 2>&1 | tee build-deps.log
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -131,24 +146,40 @@ jobs:
         run: |
           make -C build install DESTDIR="$PWD/staging" 2>&1 | tee stage.log
 
+      - name: Assert the glibc 2.31 baseline on the binary
+        # glibc symbol versions are frozen into the binary at link time and
+        # are the hard floor for every target machine. Fail loudly here
+        # instead of shipping a deb that dies with
+        # "version 'GLIBC_X.YZ' not found" on Kylin.
+        run: |
+          set -e
+          MAXGL="$(objdump -T staging/usr/bin/flameshot | grep -oE 'GLIBC_[0-9.]+' | sort -uV | tail -1 || true)"
+          echo "highest GLIBC symbol required by the binary: ${MAXGL:-none}"
+          if [ -n "$MAXGL" ] && ! dpkg --compare-versions "${MAXGL#GLIBC_}" le 2.31; then
+            echo "ERROR: the binary requires $MAXGL, exceeding the glibc 2.31 baseline" >&2
+            exit 1
+          fi
+
       - name: Build deb package
         run: |
           set -o pipefail
+          export PS4='+L$LINENO: '
           VERSION="${{ steps.ver.outputs.version }}"
           ARCH="${{ matrix.arch }}"
           PKGDIR="pkg/flameshot-ocr_${VERSION}_${ARCH}"
           DEBOUT="pkg/flameshot-ocr-${VERSION}-${{ matrix.osarch }}.deb"
           {
+            set -x
             mkdir -p "${PKGDIR}/DEBIAN"
             cp -a staging/. "${PKGDIR}/"
             cat > "${PKGDIR}/DEBIAN/control" <<EOF
           Package: flameshot-ocr
           Version: ${VERSION}
           Architecture: ${ARCH}
-          Maintainer: flameshot-ocr UOS customization
+          Maintainer: flameshot-ocr Kylin/UOS customization
           Section: graphics
           Priority: optional
-          Description: Screenshot tool with built-in OCR (UOS ${ARCH} build)
+          Description: Screenshot tool with built-in OCR (Kylin V20 ${ARCH} build)
            Flameshot fork: capture any screen region, pick the OCR tool (O)
            and the recognized text lands on the clipboard. Recognition runs
            locally via Tesseract, fully offline. All Flameshot 12.1 capture
@@ -158,17 +189,27 @@ jobs:
            Built without strict Depends; install with "dpkg -i".
           EOF
             dpkg-deb --build --root-owner-group "${PKGDIR}" "${DEBOUT}"
+            # post-build payload self-check: the application must actually be
+            # inside the deb (an earlier offline-deb bug shipped only the
+            # dependency closure and was caught by a size comparison)
+            dpkg-deb -c "${DEBOUT}" > /tmp/pkglist.txt
+            grep -F "usr/bin/flameshot" /tmp/pkglist.txt > /dev/null \
+              || { echo "ERROR: app binary missing from ${DEBOUT}" >&2; exit 1; }
+            grep -F "org.flameshot.Flameshot.desktop" /tmp/pkglist.txt > /dev/null \
+              || { echo "ERROR: desktop file missing from ${DEBOUT}" >&2; exit 1; }
+            echo "payload self-check passed for ${DEBOUT}"
           } 2>&1 | tee package.log
 
       - name: Build offline deb package
         run: |
           set -o pipefail
+          export PS4='+L$LINENO: '
           VERSION="${{ steps.ver.outputs.version }}"
           ARCH="${{ matrix.arch }}"
-          TRIPLE="${{ matrix.multiarch }}"
           PKGDIR="pkg/flameshot-ocr_${VERSION}_${ARCH}-offline"
           DEBOUT="pkg/flameshot-ocr-${VERSION}-${{ matrix.osarch }}-offline.deb"
           {
+            set -x
             mkdir -p "${PKGDIR}/DEBIAN"
             cp -a staging/. "${PKGDIR}/"
 
@@ -233,6 +274,10 @@ jobs:
           # copy is used), older or missing ones are installed from the bundle.
           set -e
           BIN=/usr/bin/flameshot
+          if [ ! -e "$BIN" ]; then
+            echo "ERROR: $BIN is missing; the package payload is broken." >&2
+            exit 1
+          fi
           DIR="$(cd "$(dirname "$0")" && pwd)/deps"
           cd "$DIR"
           MISSING=""
@@ -276,6 +321,11 @@ jobs:
           # dpkg holds its lock while this script runs, so the bundled dependency
           # debs cannot be installed here directly. Detect missing libraries and
           # schedule the installer to run via systemd once the lock is released.
+          if [ ! -e /usr/bin/flameshot ]; then
+            # fail loudly: a silent skip here would look like a healthy install
+            echo "flameshot-ocr: ERROR: /usr/bin/flameshot is missing; the package payload is broken." >&2
+            exit 1
+          fi
           MISSING="$(ldd /usr/bin/flameshot 2>/dev/null | awk '/not found/ {print $1}')"
           if [ -z "$MISSING" ]; then
             echo "flameshot-ocr: all runtime libraries present, nothing to do."
@@ -299,18 +349,31 @@ jobs:
           Package: flameshot-ocr
           Version: ${VERSION}
           Architecture: ${ARCH}
-          Maintainer: flameshot-ocr UOS customization
+          Maintainer: flameshot-ocr Kylin/UOS customization
           Section: graphics
           Priority: optional
-          Description: Screenshot tool with built-in OCR (UOS ${ARCH} offline build)
+          Description: Screenshot tool with built-in OCR (Kylin V20 ${ARCH} offline build)
            Same app as the regular deb, plus a bundled runtime dependency
            closure (deps/) and install-deps.sh for machines without network
            access, including the English Tesseract traineddata. Libraries
            already present on the system are used; only missing ones are
            installed from the bundle. Never replace glibc.
-           Requires glibc >= 2.31 (Kylin V20 / Debian 11 era or newer).
+           Requires glibc >= 2.31 (Kylin V20 / V10 SP1 / Debian 11 era or newer).
           EOF
             dpkg-deb --build --root-owner-group "${PKGDIR}" "${DEBOUT}"
+            # post-build payload self-check: app + installer + a non-empty
+            # dependency closure must all be inside the offline deb
+            dpkg-deb -c "${DEBOUT}" > /tmp/pkglist-offline.txt
+            grep -F "usr/bin/flameshot" /tmp/pkglist-offline.txt > /dev/null \
+              || { echo "ERROR: app binary missing from ${DEBOUT}" >&2; exit 1; }
+            grep -F "install-deps.sh" /tmp/pkglist-offline.txt > /dev/null \
+              || { echo "ERROR: install-deps.sh missing from ${DEBOUT}" >&2; exit 1; }
+            N="$(grep -c "flameshot-ocr/deps/.*\.deb" /tmp/pkglist-offline.txt || true)"
+            if [ "${N:-0}" -lt 10 ]; then
+              echo "ERROR: offline deb carries only ${N:-0} dependency debs — the closure is missing" >&2
+              exit 1
+            fi
+            echo "payload self-check passed for ${DEBOUT} (${N} bundled dependency debs)"
           } 2>&1 | tee -a package.log
 
       - name: Build binary tarball
@@ -322,11 +385,65 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: flameshot-ocr-${{ matrix.osarch }}-${{ steps.ver.outputs.version }}
+          name: flameshot-ocr-kylin-${{ matrix.osarch }}
           path: |
             pkg/*.deb
             *.tar.gz
           if-no-files-found: error
+
+      - name: Re-emit the failing build log tail as annotations
+        if: failure()
+        run: |
+          # The logs API answers 401/403 to anonymous readers and the job page
+          # loads its log client-side, but check-run annotations are public
+          # API. GitHub caps annotations at 10 per level per step, so the last
+          # 30 lines go out as 10 notice + 10 warning + 10 error, oldest
+          # first; every title carries its distance from the end, since
+          # identical annotations are merged.
+          f=build.log
+          [ -f "$f" ] || exit 0
+          tail -n 30 "$f" > /tmp/tail.txt
+          {
+            echo "### tail of \`$f\`"
+            echo '```'
+            cat /tmp/tail.txt
+            echo '```'
+          } >>"$GITHUB_STEP_SUMMARY"
+          total=$(wc -l < /tmp/tail.txt)
+          i=0
+          while IFS= read -r line; do
+            i=$((i + 1))
+            from_end=$((total - i + 1))
+            if [ "$from_end" -le 10 ]; then kind=error
+            elif [ "$from_end" -le 20 ]; then kind=warning
+            else kind=notice
+            fi
+            printf '::%s title=%s L%d-from-end::%s\n' "$kind" "$f" "$from_end" "$(printf '%s' "$line" | cut -c1-300)"
+          done < /tmp/tail.txt
+
+      - name: Re-emit the failing packaging log tail as annotations
+        if: failure()
+        run: |
+          f=package.log
+          [ -f "$f" ] || exit 0
+          tail -n 30 "$f" > /tmp/tail.txt
+          {
+            echo "### tail of \`$f\`"
+            echo '```'
+            cat /tmp/tail.txt
+            echo '```'
+          } >>"$GITHUB_STEP_SUMMARY"
+          total=$(wc -l < /tmp/tail.txt)
+          i=0
+          while IFS= read -r line; do
+            i=$((i + 1))
+            from_end=$((total - i + 1))
+            if [ "$from_end" -le 10 ]; then kind=error
+            elif [ "$from_end" -le 20 ]; then kind=warning
+            else kind=notice
+            fi
+            printf '::%s title=%s L%d-from-end::%s\n' "$kind" "$f" "$from_end" "$(printf '%s' "$line" | cut -c1-300)"
+          done < /tmp/tail.txt
 
       - name: Save logs to ci-logs branch on failure
         if: failure()
@@ -339,7 +456,7 @@ jobs:
             const arch = process.env.RUNNER_ARCH === 'ARM64' ? 'aarch64' : 'amd64';
             const stamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
             const files = [];
-            for (const n of ['build.log', 'stage.log', 'package.log']) {
+            for (const n of ['build-deps.log', 'build.log', 'stage.log', 'package.log']) {
               const p = path.join(ws, n);
               if (fs.existsSync(p)) files.push({ name: n.replace(/\.log$/, '') + '-' + arch + '-' + stamp + '.log', p });
             }
@@ -382,10 +499,75 @@ jobs:
             }
             core.info('logs pushed to ci-logs: ' + files.map(f => f.name).join(', '));
 
+  verify-on-kylin:
+    name: Install and run on real Kylin V10 SP1 (amd64)
+    needs: build-deb
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # distrotwin/kylin: containers bootstrapped from Kylin's public apt
+    # archives (github.com/distrotwin/kylin). v10sp1 = 桌面 V10 SP1 (2503),
+    # glibc 2.31, GCC 9.3, Ubuntu 20.04 血脉 — 正是本包的目标机。CI 按指南要求
+    # 钉带日期的 tag（滚动 tag 会随重建跨版本漂移）。
+    container: ghcr.io/distrotwin/kylin:v10sp1-base-amd64-20260903
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Download the deb artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: flameshot-ocr-kylin-kylin-amd64
+          path: debs
+
+      - name: Install the GUI runtime libraries a Kylin desktop provides
+        # base 档容器没有桌面运行库；真实麒麟桌面自带。显式从麒麟归档安装，
+        # 同时验证 deb 的运行库假设（包名与版本）在真实麒麟源里都成立。
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            libxkbcommon0 libxkbcommon-x11-0 libwayland-client0 libx11-6 libxcursor1 \
+            libxi6 libxrandr2 libgl1 libegl1 libfontconfig1 libfreetype6
+
+      - name: Install the offline deb (dpkg -i, as an offline user would)
+        run: |
+          dpkg -i debs/flameshot-ocr-*-kylin-amd64-offline.deb
+          # capture first, match second: grep -q on a pipe exits at the first
+          # match and SIGPIPEs the producer (pipefail then reports failure)
+          STAT="$(dpkg -s flameshot-ocr 2>/dev/null || true)"
+          case "$STAT" in
+            *"Status: install ok installed"*) ;;
+            *) echo "flameshot-ocr is not installed cleanly" >&2; exit 1 ;;
+          esac
+
+      - name: Run the bundled dependency installer (no systemd in the container)
+        # The postinst schedules install-deps.sh via systemd-run when
+        # libraries are missing; a container has no init system, so the
+        # documented manual fallback IS the offline install path.
+        run: |
+          /usr/share/flameshot-ocr/install-deps.sh 2>&1 | tail -40
+
+      - name: ldd gate — zero missing libraries
+        run: |
+          ldd /usr/bin/flameshot | tee /tmp/ldd.txt
+          if grep -F "not found" /tmp/ldd.txt > /dev/null; then
+            echo "ERROR: libraries are still missing:" >&2
+            grep -F "not found" /tmp/ldd.txt >&2
+            exit 1
+          fi
+
+      - name: OCR traineddata must be present
+        run: |
+          ENG="$(find /usr/share -name 'eng.traineddata' -print -quit 2>/dev/null)"
+          echo "eng.traineddata: ${ENG:-NOT FOUND}"
+          [ -n "$ENG" ] || { echo "ERROR: English traineddata was not installed" >&2; exit 1; }
+
+      - name: The binary must run
+        run: |
+          /usr/bin/flameshot --version
+
   publish-release:
     name: Publish GitHub release
     if: startsWith(github.ref, 'refs/tags/')
-    needs: build-deb
+    needs: [build-deb, verify-on-kylin]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -401,29 +583,33 @@ jobs:
           TAG_NAME: ${{ github.ref_name }}
         run: |
           cat > release_notes.md <<'EOF'
-          flameshot-ocr custom build (UOS/deepin), a Flameshot fork with built-in OCR.
+          flameshot-ocr custom build for Kylin V20 / V10 SP1 / UOS (glibc 2.31 baseline), amd64 + aarch64.
 
           - Capture any region, pick the OCR tool (O) and the recognized text
-            is copied straight to the clipboard
-          - Recognition runs locally via Tesseract, fully offline; English
-            traineddata is bundled in the -offline package (install extra
-            tesseract-ocr-* language packs for other languages)
+            is copied straight to the clipboard; recognition runs locally via
+            Tesseract, fully offline
+          - English traineddata is bundled in the -offline packages (install
+            extra tesseract-ocr-* language packs for other languages)
           - All Flameshot 12.1.0 capture and annotation features preserved
 
-          Built against Qt 5.15 and Tesseract 4.1 (Debian bullseye) on native
-          runners. Requires glibc >= 2.31: runs on Kylin V20 (Ubuntu 20.04
-          base), UOS/deepin desktops and anything newer. UOS 20 (glibc 2.28)
-          and other glibc 2.28 systems are not supported.
-          Assets: arm64 for UOS ARM64 devices, amd64 for x86_64 (VM) testing.
-          Install: `sudo dpkg -i flameshot-ocr-*.deb` (no strict Depends; if a
-          distro flameshot package is installed, remove it first — the binary
-          is /usr/bin/flameshot).
+          Assets:
+          - `flameshot-ocr-<version>-kylin-<arch>.deb` — regular package; a
+            desktop system provides the runtime libraries the app loads at
+            run time
+          - `flameshot-ocr-<version>-kylin-<arch>-offline.deb` — for minimal
+            or offline machines: bundles the runtime dependency closure
+            (Qt5, Tesseract, English traineddata). After `dpkg -i` the
+            installer runs automatically (10s delay,
+            `journalctl -u flameshot-ocr-deps`), or run
+            `sudo /usr/share/flameshot-ocr/install-deps.sh` once.
 
-          Offline machines: grab the -offline deb instead. It bundles the
-          runtime dependency closure including English Tesseract data; after
-          dpkg -i, run `sudo /usr/share/flameshot-ocr/install-deps.sh` once —
-          it installs only the libraries missing on that system, already
-          installed ones are used as-is.
+          Built in a Debian bullseye container (glibc 2.31) and
+          install-verified in a real Kylin V10 SP1 (2503) container before
+          publishing. Requires glibc >= 2.31: Kylin V20 / Ubuntu Kylin
+          (Ubuntu 20.04 base), UOS/deepin desktops, Debian 11+. Older systems
+          (UOS 20, glibc 2.28) are not supported — glibc cannot be bundled.
+          If a distro flameshot package is installed, remove it first (the
+          binary is /usr/bin/flameshot).
           EOF
           NOTES_JSON=$(sed 's/\\/\\\\/g; s/"/\\"/g' release_notes.md | awk 'BEGIN{ORS=""} {print $0 "\\n"}')
 
@@ -432,7 +618,7 @@ jobs:
 
           RELEASE_ID=$(curl -sf -X POST -H "$AUTH" -H "Accept: application/vnd.github+json" \
             "$API/releases" \
-            -d "{\"tag_name\":\"${TAG_NAME}\",\"name\":\"flameshot-ocr ${TAG_NAME#v} (UOS)\",\"target_commitish\":\"master\",\"body\":\"${NOTES_JSON}\"}" \
+            -d "{\"tag_name\":\"${TAG_NAME}\",\"name\":\"flameshot-ocr ${TAG_NAME#v} (Kylin)\",\"target_commitish\":\"master\",\"body\":\"${NOTES_JSON}\"}" \
             | grep -o '"id": *[0-9]*' | head -1 | grep -oE '[0-9]+')
 
           if [ -z "$RELEASE_ID" ]; then
