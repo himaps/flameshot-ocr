@@ -83,16 +83,17 @@ QString OcrTool::performOCR(const QPixmap& pixmap)
     image.setDotsPerMeterY(2835);
 
     tesseract::TessBaseAPI api;
-    const char* languages = "eng+deu+fra+spa+chi_sim+jpn+ara+hin+rus";
-
-    if (api.Init(nullptr, languages)) {
+    // The offline Kylin/UOS builds bundle Simplified Chinese + English
+    // traineddata (tesseract-ocr-chi-sim / tesseract-ocr-eng); ask for both
+    // and fall back to English alone when the Chinese data is not installed.
+    if (api.Init(nullptr, "chi_sim+eng")) {
         if (api.Init(nullptr, "eng")) {
             qDebug() << "OCR: Failed to initialize Tesseract";
             return QString();
         }
         qDebug() << "OCR: Using English only";
     } else {
-        qDebug() << "OCR: Using multilingual mode";
+        qDebug() << "OCR: Using Chinese + English mode";
     }
 
     api.SetPageSegMode(tesseract::PSM_AUTO);

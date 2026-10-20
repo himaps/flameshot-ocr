@@ -1,13 +1,16 @@
 # Kylin V20 / V10 SP1 / UOS release, following the 银河麒麟 domestic-adaptation
 # guide: BUILD in the real-Kylin devel container (distrotwin/kylin, bootstrapped
 # from Kylin's public apt archives — the toolchain and every runtime package are
-# Kylin's own), then VERIFY the deb on a clean Kylin base container before
-# publishing. Payload self-check, glibc gate and annotation-based failure
-# diagnostics per the same guide.
+# Kylin's own), then VERIFY the offline deb on a clean Kylin base container
+# before publishing. Payload self-check, glibc gate and annotation-based
+# failure diagnostics per the same guide.
 #
-# Native runners (no cross compilation). Pushes to master build automatically;
-# a v* tag also attaches the debs to the tag's GitHub release (release is gated
-# on the real-Kylin verify job); any branch can be built through workflow_dispatch.
+# Ships two deb variants per architecture: the regular deb (a Kylin/UOS/deepin
+# desktop provides the runtime) and the -offline deb (bundles the runtime
+# dependency closure + Chinese/English Tesseract data for machines without
+# network access). Native runners, no cross compilation. Pushes to master
+# build automatically; a v* tag also attaches the debs to the tag's GitHub
+# release (release is gated on the real-Kylin verify job).
 name: Kylin V20 / UOS release
 
 on:
@@ -30,7 +33,7 @@ defaults:
 
 jobs:
   build-deb:
-    name: Build kylin-${{ matrix.osarch }} deb
+    name: Build kylin-${{ matrix.osarch }} debs
     strategy:
       fail-fast: false
       matrix:
@@ -174,8 +177,8 @@ jobs:
           Description: Screenshot tool with built-in OCR (Kylin V20 ${ARCH} build)
            Flameshot fork: capture any screen region, pick the OCR tool (O)
            and the recognized text lands on the clipboard. Recognition runs
-           locally via Tesseract, fully offline. All Flameshot 12.1 capture
-           and annotation features are preserved.
+           locally via Tesseract (Chinese + English), fully offline. All
+           Flameshot 12.1 capture and annotation features are preserved.
            The binary stays /usr/bin/flameshot; remove a distro flameshot
            package before installing to avoid a file conflict.
            Built without strict Depends; install with "dpkg -i".
@@ -191,6 +194,199 @@ jobs:
               || { echo "ERROR: desktop file missing from ${DEBOUT}" >&2; exit 1; }
             echo "payload self-check passed for ${DEBOUT}"
           } 2>&1 | tee package.log
+
+      - name: Build offline deb package
+        run: |
+          set -o pipefail
+          export PS4='+L$LINENO: '
+          VERSION="${{ steps.ver.outputs.version }}"
+          ARCH="${{ matrix.arch }}"
+          PKGDIR="pkg/flameshot-ocr_${VERSION}_${ARCH}-offline"
+          DEBOUT="pkg/flameshot-ocr-${VERSION}-${{ matrix.osarch }}-offline.deb"
+          {
+            set -x
+            mkdir -p "${PKGDIR}/DEBIAN"
+            cp -a staging/. "${PKGDIR}/"
+
+            # Bundle the runtime dependency closure so the app can be
+            # installed and run on machines without network access. The
+            # closure comes from the same Kylin archive the app was built
+            # in, so package names and versions match the target exactly.
+            # install-deps.sh installs only what is missing; libraries that
+            # already exist on the system are used as-is.
+            mkdir -p "${PKGDIR}/usr/share/flameshot-ocr/deps" /tmp/offline-cache
+            LIBS="$(ldd staging/usr/bin/flameshot | awk '{print $1}' | sort -u)"
+            echo "linked libs: $LIBS"
+            TOP=""
+            for lib in $LIBS; do
+              # dpkg -S exits 1 for loader-internal libs (linux-vdso etc.);
+              # || true keeps set -e from exiting silently on the assignment
+              p="$(dpkg -S "$lib" 2>/dev/null | head -1 | cut -d: -f1 || true)"
+              [ -n "$p" ] && TOP="$TOP $p"
+            done
+            echo "offline deps direct closure:$TOP"
+            # ldd only sees shared libraries linked at startup. The OCR
+            # engine also reads traineddata at runtime — seed the Chinese +
+            # English data packages the app asks for — and Qt loads SVG icon
+            # rendering as a dlopen'd plugin from libqt5svg5 (invisible to
+            # ldd because of --as-needed). Skip them and OCR or the toolbar
+            # icons break on offline machines.
+            TOP="$TOP tesseract-ocr-chi-sim tesseract-ocr-eng tesseract-ocr-osd libqt5svg5"
+            # Expand to the full recursive Depends closure: target distros
+            # package some libraries under different names, so the bundle
+            # must contain every indirect dependency for offline
+            # "dpkg -i" to succeed.
+            PKGS="$TOP"
+            for round in 1 2 3 4 5; do
+              rm -rf /tmp/offline-cache
+              mkdir -p /tmp/offline-cache
+              apt-get install --reinstall --download-only --no-install-recommends \
+                -y -o Dir::Cache::archives="/tmp/offline-cache" $PKGS >/dev/null
+              MORE=""
+              for f in /tmp/offline-cache/*.deb; do
+                deps="$(dpkg-deb -f "$f" Depends 2>/dev/null | sed 's/ ([^)]*)//g' | tr ',' '\n' | sed 's/|.*//; s/^ *//; s/ *$//' | grep -v '^$' || true)"
+                MORE="$MORE $deps"
+              done
+              NEW="$(echo $PKGS $MORE | tr ' ' '\n' | sort -u | tr '\n' ' ')"
+              CUR="$(echo $PKGS | tr ' ' '\n' | sort -u | tr '\n' ' ')"
+              if [ "$NEW" = "$CUR" ]; then
+                echo "closure stable after round $round ($(echo $NEW | wc -w) packages)"
+                break
+              fi
+              PKGS="$NEW"
+              echo "closure round $round grew to $(echo $NEW | wc -w) packages"
+            done
+            for f in /tmp/offline-cache/*.deb; do
+              p="$(dpkg-deb -f "$f" Package)"
+              [ "$(dpkg-deb -f "$f" Essential)" = "yes" ] && continue
+              # glibc must never be replaced by a bundled copy
+              [ "$p" = "libc6" ] && continue
+              cp "$f" "${PKGDIR}/usr/share/flameshot-ocr/deps/"
+            done
+            cat > "${PKGDIR}/usr/share/flameshot-ocr/install-deps.sh" <<'SH'
+          #!/bin/sh
+          # Install or upgrade the runtime dependencies bundled in ./deps:
+          # - Qt5 libraries (libqt5*) are upgraded when the system copy is
+          #   older (Qt 5.x is forward-ABI compatible; the app cannot run on
+          #   an older system Qt)
+          # - every other package is only installed when MISSING; the
+          #   distro's own (possibly customized) versions are never replaced
+          set -e
+          BIN=/usr/bin/flameshot
+          if [ ! -e "$BIN" ]; then
+            echo "ERROR: $BIN is missing; the package payload is broken." >&2
+            exit 1
+          fi
+          DIR="$(cd "$(dirname "$0")" && pwd)/deps"
+          cd "$DIR"
+          MISSING=""
+          is_qt() { case "$1" in libqt5*) return 0 ;; *) return 1 ;; esac; }
+          for f in *.deb; do
+            pkg="$(dpkg-deb -f "$f" Package)"
+            ver="$(dpkg-deb -f "$f" Version)"
+            stat="$(dpkg-query -W -f='${db:Status-Abbrev}' "$pkg" 2>/dev/null || true)"
+            case "$stat" in
+              ii*)
+                inst="$(dpkg-query -W -f='${Version}' "$pkg" 2>/dev/null || true)"
+                if is_qt "$pkg" && ! dpkg --compare-versions "${inst:-0}" ge "$ver"; then
+                  echo "$pkg: system $inst is older, upgrading with $f ($ver)"
+                else
+                  echo "$pkg: system has $inst, keeping it"
+                  continue
+                fi
+                ;;
+              *)
+                echo "$pkg: missing, will install $f ($ver)"
+                ;;
+            esac
+            MISSING="$MISSING $f"
+          done
+          if [ -n "$MISSING" ]; then
+            # single dpkg call so packages configure in dependency order.
+            # --force-depends-version is defensive: the closure normally
+            # matches the target archive exactly, but if the archive moved
+            # between build and install, version clauses from a different
+            # snapshot carry no truth on this machine — name-level
+            # dependencies are still enforced.
+            dpkg -i --force-depends-version $MISSING
+          else
+            echo "nothing to install"
+          fi
+          echo ""
+          STILL="$(ldd "$BIN" 2>/dev/null | awk '/not found/ {print $1}')"
+          if [ -n "$STILL" ]; then
+            echo "WARNING: these libraries are still missing, the app will not start:"
+            echo "$STILL"
+            exit 1
+          fi
+          echo "OK: all runtime libraries resolved. flameshot-ocr is ready."
+          SH
+            chmod 755 "${PKGDIR}/usr/share/flameshot-ocr/install-deps.sh"
+            cat > "${PKGDIR}/DEBIAN/postinst" <<'EOF'
+          #!/bin/sh
+          # dpkg holds its lock while this script runs, so the bundled
+          # dependency debs cannot be installed here directly. Schedule the
+          # installer via systemd once the lock is released; without systemd,
+          # print the manual command. ldd cannot see Qt symbol versions, so
+          # do not gate on it — install-deps.sh is version-aware and finishes
+          # instantly when nothing needs changing.
+          if [ ! -e /usr/bin/flameshot ]; then
+            # fail loudly: a silent skip here would look like a healthy install
+            echo "flameshot-ocr: ERROR: /usr/bin/flameshot is missing; the package payload is broken." >&2
+            exit 1
+          fi
+          MISSING="$(ldd /usr/bin/flameshot 2>/dev/null | awk '/not found/ {print $1}')"
+          if [ -n "$MISSING" ]; then
+            echo "flameshot-ocr: missing runtime libraries:"
+            echo "$MISSING" | sed 's/^/  /'
+          fi
+          if command -v systemd-run >/dev/null 2>&1; then
+            echo "flameshot-ocr: resolving bundled runtime deps in 10s (installs only what is missing, or older system Qt)"
+            echo "  (same as running: sudo /usr/share/flameshot-ocr/install-deps.sh)"
+            systemd-run --on-active=10 --quiet --unit=flameshot-ocr-deps \
+              /usr/share/flameshot-ocr/install-deps.sh 2>/dev/null \
+              || echo "flameshot-ocr: auto-install could not be scheduled; run the command above manually."
+          else
+            echo "flameshot-ocr: run this once to install them from the bundled offline deps:"
+            echo "  sudo /usr/share/flameshot-ocr/install-deps.sh"
+          fi
+          EOF
+            chmod 755 "${PKGDIR}/DEBIAN/postinst"
+            cat > "${PKGDIR}/DEBIAN/control" <<EOF
+          Package: flameshot-ocr
+          Version: ${VERSION}
+          Architecture: ${ARCH}
+          Maintainer: flameshot-ocr Kylin/UOS customization
+          Section: graphics
+          Priority: optional
+          Description: Screenshot tool with built-in OCR (Kylin V20 ${ARCH} offline build)
+           Same app as the regular deb, plus a bundled runtime dependency
+           closure (deps/) and install-deps.sh for machines without network
+           access, including the Simplified Chinese and English Tesseract
+           traineddata. Libraries already present on the system are used;
+           only missing ones are installed from the bundle. Never replaces
+           glibc.
+           Requires glibc >= 2.31 (Kylin V20 / V10 SP1 / Debian 11 era or
+           newer).
+          EOF
+            dpkg-deb --build --root-owner-group "${PKGDIR}" "${DEBOUT}"
+            # post-build payload self-check: app + installer + the Chinese
+            # data package + a non-empty dependency closure must all be
+            # inside the offline deb
+            dpkg-deb -c "${DEBOUT}" > /tmp/pkglist-offline.txt
+            grep -F "usr/bin/flameshot" /tmp/pkglist-offline.txt > /dev/null \
+              || { echo "ERROR: app binary missing from ${DEBOUT}" >&2; exit 1; }
+            grep -F "install-deps.sh" /tmp/pkglist-offline.txt > /dev/null \
+              || { echo "ERROR: install-deps.sh missing from ${DEBOUT}" >&2; exit 1; }
+            grep -F "tesseract-ocr-chi-sim" /tmp/pkglist-offline.txt > /dev/null \
+              || { echo "ERROR: Chinese traineddata package missing from ${DEBOUT}" >&2; exit 1; }
+            N="$(grep -c "flameshot-ocr/deps/.*\.deb" /tmp/pkglist-offline.txt || true)"
+            if [ "${N:-0}" -lt 10 ]; then
+              echo "ERROR: offline deb carries only ${N:-0} dependency debs — the closure is missing" >&2
+              exit 1
+            fi
+            echo "payload self-check passed for ${DEBOUT} (${N} bundled dependency debs, Chinese data included)"
+          } 2>&1 | tee -a package.log
 
       - name: Collect release files
         run: |
@@ -316,39 +512,28 @@ jobs:
             core.info('logs pushed to ci-logs: ' + files.map(f => f.name).join(', '));
 
   verify-on-kylin:
-    name: Install and run on real Kylin V10 SP1 (amd64)
+    name: Install offline deb on real Kylin V10 SP1 (amd64)
     needs: build-deb
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # distrotwin/kylin: containers bootstrapped from Kylin's public apt
     # archives (github.com/distrotwin/kylin). v10sp1 = 桌面 V10 SP1 (2503),
     # glibc 2.31, GCC 9.3, Ubuntu 20.04 血脉 — 正是本包的目标机。base 档 =
-    # 无桌面的干净系统。CI 按指南要求钉带日期的 tag（滚动 tag 会随重建漂移）。
+    # 无桌面的干净系统：只装离线包 + 跑包内依赖安装脚本，任何一步从外部
+    # 归档装运行库都会掩盖离线包闭包不全的问题。CI 按指南要求钉带日期 tag。
     container: ghcr.io/distrotwin/kylin:v10sp1-base-amd64-20260903
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
-      - name: Download the deb artifact
+      - name: Download the deb artifacts
         uses: actions/download-artifact@v4
         with:
           name: flameshot-ocr-kylin-kylin-amd64
           path: debs
 
-      - name: Install the runtime libraries a Kylin desktop provides
-        # base 档容器没有桌面运行库；真实麒麟桌面自带（含 Qt5 与 Tesseract）。
-        # 全部从麒麟归档安装，同时验证 deb 的运行库假设（包名与版本）在真实
-        # 麒麟源里都成立。libgomp1 是 libtesseract4 的依赖。
+      - name: Install the offline deb (dpkg -i, as an offline user would)
         run: |
-          apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            libqt5gui5 libqt5network5 libqt5dbus5 libqt5svg5 \
-            libxkbcommon0 libxkbcommon-x11-0 libwayland-client0 libx11-6 libxcursor1 \
-            libxi6 libxrandr2 libgl1 libegl1 libfontconfig1 libfreetype6 libgomp1 \
-            libtesseract4 liblept5 tesseract-ocr-eng tesseract-ocr-osd
-
-      - name: Install the deb (dpkg -i, as a user would)
-        run: |
-          dpkg -i debs/flameshot-ocr-*-kylin-amd64.deb
+          dpkg -i debs/flameshot-ocr-*-kylin-amd64-offline.deb
           # capture first, match second: grep -q on a pipe exits at the first
           # match and SIGPIPEs the producer (pipefail then reports failure)
           STAT="$(dpkg -s flameshot-ocr 2>/dev/null || true)"
@@ -356,6 +541,25 @@ jobs:
             *"Status: install ok installed"*) ;;
             *) echo "flameshot-ocr is not installed cleanly" >&2; exit 1 ;;
           esac
+
+      - name: Run the bundled dependency installer (no systemd in the container)
+        # The postinst schedules install-deps.sh via systemd-run; a container
+        # has no init system, so the documented manual fallback IS the
+        # offline install path. Capture the full output — a bare tail hides
+        # the "dpkg: error processing package X" lines between "Setting up".
+        run: |
+          set +e
+          /usr/share/flameshot-ocr/install-deps.sh > /tmp/install-deps.log 2>&1
+          rc=$?
+          set -e
+          tail -40 /tmp/install-deps.log
+          if [ "$rc" -ne 0 ]; then
+            {
+              echo "---- install-deps.sh failed (rc=$rc), dpkg errors: ----"
+              grep -E "dpkg: error|depends on .*; however|Errors were encountered" /tmp/install-deps.log || true
+            } >&2
+            exit "$rc"
+          fi
 
       - name: ldd gate — zero missing libraries
         run: |
@@ -365,6 +569,14 @@ jobs:
             grep -F "not found" /tmp/ldd.txt >&2
             exit 1
           fi
+
+      - name: Chinese and English traineddata must be present
+        run: |
+          for DATA in chi_sim eng osd; do
+            F="$(find /usr/share -name "${DATA}.traineddata" -print -quit 2>/dev/null)"
+            echo "${DATA}.traineddata: ${F:-NOT FOUND}"
+            [ -n "$F" ] || { echo "ERROR: ${DATA} traineddata missing" >&2; exit 1; }
+          done
 
       - name: The binary must run
         run: |
@@ -393,14 +605,19 @@ jobs:
 
           - Capture any region, pick the OCR tool (O) and the recognized text
             is copied straight to the clipboard; recognition runs locally via
-            Tesseract, fully offline (install extra tesseract-ocr-* language
-            packs for other languages)
+            Tesseract, fully offline, Simplified Chinese + English
           - All Flameshot 12.1.0 capture and annotation features preserved
 
-          Assets: `flameshot-ocr-<version>-kylin-<arch>.deb` — no strict
-          Depends; a Kylin/UOS/deepin desktop provides the runtime libraries
-          the app loads at run time (Qt5, Tesseract, English traineddata via
-          tesseract-ocr-eng).
+          Assets (file name format: flameshot-ocr-<version>-kylin-<arch>[-offline].deb):
+          - regular deb — a Kylin/UOS/deepin desktop provides the runtime
+            libraries the app loads at run time; OCR needs libtesseract4,
+            liblept5 and tesseract-ocr-eng/tesseract-ocr-chi-sim from the
+            distro archive
+          - -offline deb — for machines without network access: bundles the
+            runtime dependency closure (Qt5, Tesseract, X11 stack) and the
+            Chinese + English traineddata. After `dpkg -i` the installer
+            runs automatically (10s delay, `journalctl -u flameshot-ocr-deps`),
+            or run `sudo /usr/share/flameshot-ocr/install-deps.sh` once.
 
           Built in a real Kylin V10 SP1 (2503) container (glibc 2.31, Qt
           5.12, Kylin's own package archive) and install-verified on a clean

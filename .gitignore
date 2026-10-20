@@ -76,3 +76,6 @@ data/flatpak/.flatpak-builder
 # Miscellaneous
 !docs/dev/Makefile
 .direnv
+
+# local scanner state (Mimosa hook)
+.mimosa/

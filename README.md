@@ -125,19 +125,32 @@ To build a deb by hand:
     # copy staging/. into pkg/flameshot-ocr_<version>_<arch>/ with a DEBIAN/control,
     # then: dpkg-deb --build --root-owner-group pkg/flameshot-ocr_<version>_<arch>
 
-Pushing a `v*` tag (e.g. `v12.1.0-kylin.1`) builds both architectures and
-publishes a GitHub release with the debs (文件名格式：
-`flameshot-ocr-<版本>-kylin-<架构>.deb`); pushing master runs the same build
-as a dual-architecture precheck.
+Pushing a `v*` tag (e.g. `v12.1.0-kylin.2`) builds both architectures and
+publishes a GitHub release with two deb variants per arch（文件名格式：
+`flameshot-ocr-<版本>-kylin-<架构>[-offline].deb`）；pushing master runs the
+same build as a dual-architecture precheck. OCR 识别语言为**中文+英文**
+（`chi_sim+eng`），离线包已内置两国的 traineddata；只有英文数据时自动回退纯英文。
 
 发布前工作流强制执行四道质量门禁（细节见踩坑记录）：
 
 - **glibc 基线门禁**：`objdump` 扫描主程序最高 GLIBC 符号版本，超过 2.31 直接判失败，杜绝"在麒麟上启动即报 `GLIBC_2.3x not found`"的产物出厂；
-- **构建后载荷自检**：对每个 deb 跑 `dpkg-deb -c` 断言主程序与 desktop 文件确实在包里；
-- **真实麒麟验证（发布门禁）**：在钉了日期 tag 的干净麒麟 base 容器 `ghcr.io/distrotwin/kylin:v10sp1-base-amd64-<日期>`（github.com/distrotwin/kylin，从麒麟公开 apt 归档自举）里，先从麒麟归档装齐桌面运行库（同时验证"桌面自带运行库"的假设在真实麒麟源里成立），再 `dpkg -i` 本 deb → `ldd` 零缺失 → `flameshot --version` 可运行。Release 发布以该 job 通过为前置条件；
+- **构建后载荷自检**：对每个 deb 跑 `dpkg-deb -c` 断言主程序与 desktop 文件确实在包里（离线包另加安装脚本、中文数据包与非空依赖闭包）；
+- **真实麒麟验证（发布门禁）**：在钉了日期 tag 的干净麒麟 base 容器 `ghcr.io/distrotwin/kylin:v10sp1-base-amd64-<日期>`（github.com/distrotwin/kylin，从麒麟公开 apt 归档自举）里，**只装离线包并跑包内依赖安装脚本**（不从外部归档补任何运行库，专治闭包不全）→ `ldd` 零缺失 → `chi_sim`/`eng` traineddata 就位 → `flameshot --version` 可运行。Release 发布以该 job 通过为前置条件；
 - **注解诊断**：失败日志尾部重发为 `::error::`/`::warning::` 注解（logs API 对匿名请求 403，check-run 注解是公开 API，本机无凭据也能定位失败），完整日志同时兜底推 `ci-logs` 分支。
 
 glibc 硬边界：产物要求目标机 glibc ≥ 2.31——麒麟 V20 / V10 SP1（Ubuntu 20.04 基座）✓、UOS/deepin 桌面 ✓、Debian 11+ ✓；老 UOS 20（glibc 2.28）不在支持范围（glibc 永远不能打包替换），需要目标机自编译。
+
+## 离线环境安装（offline install）
+
+离线机装 `-offline` 后缀的 deb（架构对好：`kylin-aarch64` 对应 ARM64）：
+
+    sudo dpkg -i flameshot-ocr-<版本>-kylin-<架构>-offline.deb
+
+安装结束时 postinst 会通过 systemd 延迟 10 秒执行一次依赖安装（等 dpkg 锁释放，结果在 `journalctl -u flameshot-ocr-deps`）；systemd 不可用时回退为提示手动执行：
+
+    sudo /usr/share/flameshot-ocr/install-deps.sh
+
+脚本逻辑（版本感知、分类施策）：**Qt5 库（libqt5\*）系统版本更低时用包内副本升级**（Qt5 向前 ABI 兼容，升级不伤系统里其他 Qt 应用）；**其余库只补缺，不覆盖发行版自带版本**。包内闭包（`deps/`）与构建同源（麒麟公开归档），含 Qt5、Tesseract 与**中文+英文 traineddata**，装完自动 `ldd` 复验并报告"全部就绪"或仍缺失清单。
 
 ## 构建踩坑记录（构建环境演变：bullseye → 真实麒麟容器）
 
@@ -155,14 +168,16 @@ glibc 硬边界：产物要求目标机 glibc ≥ 2.31——麒麟 V20 / V10 SP1
 10. **真实麒麟容器验证 + 钉日期 tag**。distrotwin/kylin 容器从麒麟公开 apt 源自举（`v10sp1` = 桌面 V10 SP1 2503，glibc 2.31 / GCC 9.3 / Ubuntu 20.04 血脉），分 micro / base / devel 三档。CI 必须钉带日期的 tag（如 `v10sp1-devel-amd64-20260903`）——滚动 tag 会随重建漂移，`latest` 甚至会跨大版本把 glibc 从 2.31 推到 2.38。验证按用户真实路径走：从麒麟归档装桌面运行库（同时验证了"桌面自带运行库"的包名假设）→ `dpkg -i` deb → `ldd` 零缺失 → `flameshot --version`。Release 发布以该 job 通过为前置条件。
 11. **无凭据也能诊断 CI**。Actions logs API 对匿名请求 401/403，job 页面日志靠前端加载——本机无 gh CLI / token 时两者都读不到；**check-run annotations 是公开 API**。工作流在失败时把日志最后 30 行重发为 10 notice + 10 warning + 10 error 注解（每级每步上限 10 条，title 带"距末尾第几行"防合并），用 `commits/{sha}/check-runs` 匿名可读；静默 `set -e` 死亡用 `set -x` + `PS4='+L$LINENO: '` 让失败命令自己报行号。完整日志兜底推 `ci-logs` 分支。
 12. **为什么最终换掉 bullseye：跨发行版近似是一整类坑**。bullseye 时期踩过的：麒麟桌面 UKUI 自带 Qt 5.12.8，bullseye Qt 5.15 构建的程序反向 ABI 不兼容，而 `ldd` 只看 soname、看不出符号版本差异；bullseye 包把构建时版本写进版本子句（`libx11-xcb1 (>= 2:1.7.2)`、mesa `libgl1 (= libglx0)`、gcc 运行时的 `gcc-10-base (= ...)`），盖到麒麟自己的定制栈上必然配置失败并级联。教训：**运行库要跟目标机同源**。按麒麟适配指南换成 `v10sp1-devel` 容器后，编译、依赖、验证同宗，这一类问题整体消失；上面留存的坑多与构建环境无关，换基线前别扔。
+13. **预置了数据包不等于用得上：OCR 语言组合必须与包内数据一致**。ocrtool 原来先尝试 9 语言组合（`eng+deu+fra+spa+chi_sim+jpn+ara+hin+rus`），失败才回退纯英文——离线包只预置中文+英文时，组合里缺 deu/fra 等会整体初始化失败，**静默回退英文，中文数据躺在包里也识别不了中文**。现在固定请求 `chi_sim+eng`（与离线包内置数据一致），缺中文数据时回退纯英文。给离线场景加任何运行时资源，都要顺路核对消费它的代码路径真的会用到它。
 
 ## 复用本工作流（其他 Qt 项目）
 
 复制 `.github/workflows/release.yml` 后按项目调整：
 
-- 顶层产物名、control 里的 `Package`/`Description`、发布说明文本（全局替换 `flameshot-ocr` 即可）
+- 顶层产物名、control 里的 `Package`/`Description`、发布说明文本、离线包 `deps/` 与安装脚本路径（全局替换 `flameshot-ocr` 即可）
 - "Install build dependencies" 换成项目真实的构建依赖；按容器基线（当前麒麟 V10 SP1，Ubuntu 20.04 包名体系）确认归档里有对应 `-dev` 包
-- verify-on-kylin 里预装的"桌面运行库"清单换成项目真实的运行时需求
+- 离线闭包里 ldd 看不见的运行时资源（数据包、词典、dlopen 的插件），照离线包构建步骤里 seed 的做法显式加入，并核对消费代码真的会用到
+- verify-on-kylin 保持"只装离线包 + 包内脚本、不从外部归档补库"的口径，才能暴露闭包不全
 - glibc 门禁、载荷自检、注解诊断、ci-logs 兜底这四样与产品无关，原样保留即可
 - 目标机是麒麟 V10 SP1/V20 时保留 verify-on-kylin job（真实归档验证 + 发布门禁），按指南要求更新容器 tag 里的日期
 - 推送 master 做双架构预检；打 `v*` tag 自动构建并发布 Release
