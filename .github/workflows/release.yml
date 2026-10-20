@@ -1,12 +1,13 @@
-# Kylin V20 / V10 SP1 / UOS release: glibc-2.31 baseline debs, following the
-# deepin-screenshot packaging workflow and the 银河麒麟 domestic-adaptation
-# guide (real-Kylin verification job, payload self-checks, glibc gate,
-# annotation-based failure diagnostics).
+# Kylin V20 / V10 SP1 / UOS release, following the 银河麒麟 domestic-adaptation
+# guide: BUILD in the real-Kylin devel container (distrotwin/kylin, bootstrapped
+# from Kylin's public apt archives — the toolchain and every runtime package are
+# Kylin's own), then VERIFY the offline deb on a clean Kylin base container
+# before publishing. Payload self-checks, glibc gate and annotation-based
+# failure diagnostics per the same guide.
 #
-# Native runners (no cross compilation) inside a Debian bullseye container.
-# Pushes to master build automatically; a v* tag also attaches the debs to
-# the tag's GitHub release (release is gated on the real-Kylin verify job);
-# any branch can be built on demand through workflow_dispatch.
+# Native runners (no cross compilation). Pushes to master build automatically;
+# a v* tag also attaches the debs to the tag's GitHub release (release is gated
+# on the real-Kylin verify job); any branch can be built through workflow_dispatch.
 name: Kylin V20 / UOS release
 
 on:
@@ -42,32 +43,23 @@ jobs:
             runner: ubuntu-24.04
             multiarch: x86_64-linux-gnu
             osarch: kylin-amd64
-    # Native runners produce native builds. The container sets the glibc
-    # baseline: bullseye is 2.31, exactly Kylin V20's (Ubuntu 20.04 base,
-    # glibc 2.31-0kylin), and everything newer (UOS/deepin, Debian 11+)
-    # accepts the binaries too. For older UOS 20 (glibc 2.28) build on-device.
+    # Native runners produce native builds. Build in the real Kylin V10 SP1
+    # devel container (desktop V10 SP1 2503: glibc 2.31, GCC 9.3, Ubuntu
+    # 20.04 bloodline): the compiler, Qt (5.12), Tesseract and every package
+    # in the offline closure are exactly what a Kylin machine sees, so there
+    # is no cross-distro version guessing at all. Older UOS 20 (glibc 2.28)
+    # is a different generation — build on-device for it.
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 150
-    container: debian:bullseye-slim
+    container:
+      image: ghcr.io/distrotwin/kylin:v10sp1-devel-${{ matrix.arch }}-20260903
     env:
       DEBIAN_FRONTEND: noninteractive
-      # The debian-slim container's pkg-config does not search the multiarch
-      # pkgconfig directory on its own
+      # the container's pkg-config does not search the multiarch pkgconfig
+      # directory on its own
       PKG_CONFIG_PATH: /usr/lib/${{ matrix.multiarch }}/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig
 
     steps:
-      - name: Point bullseye-security at the Debian archive
-        run: |
-          set -e
-          # bullseye has left regular security support: deb.debian.org still
-          # serves the bullseye-security package index, but the .debs in its
-          # pool are gone (404). Keep main on the fast deb.debian.org mirror
-          # and point only the security suite at archive.debian.org — the
-          # whole archive mirror rate-limits cloud runner IPs.
-          sed -i 's|http://security.debian.org|http://archive.debian.org|g; s|http://deb.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list
-          echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-valid-until
-          cat /etc/apt/sources.list
-
       - name: Install build dependencies
         run: |
           set -o pipefail
@@ -83,14 +75,14 @@ jobs:
               fi
               sleep 20
             done
-            # Qt5 (Core/Gui/Widgets/Network/DBus/Svg/LinguistTools) + the OCR
-            # stack: pkg-config modules "tesseract" and "lept" come from
-            # libtesseract-dev and libleptonica-dev. qttools5-dev provides the
-            # Qt5LinguistTools CMake config; qttools5-dev-tools provides the
-            # lrelease binary - both are needed.
+            # devel 档已带 build-essential/pkg-config/dpkg-dev；这里补项目所需：
+            # Qt5 (Core/Gui/Widgets/Network/DBus/Svg/LinguistTools) 与 OCR 栈
+            # （pkg-config 模块 "tesseract"/"lept" 来自 libtesseract-dev 和
+            # libleptonica-dev）。qttools5-dev 提供 Qt5LinguistTools 的 CMake
+            # 配置，qttools5-dev-tools 提供 lrelease 可执行文件，缺一不可。
             for attempt in 1 2 3; do
               if apt-get install -y --no-install-recommends -o Acquire::Retries=5 \
-                build-essential cmake pkg-config git curl ca-certificates \
+                cmake pkg-config git curl ca-certificates \
                 qtbase5-dev libqt5svg5-dev qttools5-dev qttools5-dev-tools \
                 libtesseract-dev libleptonica-dev; then
                 break
@@ -265,10 +257,10 @@ jobs:
               [ "$(dpkg-deb -f "$f" Essential)" = "yes" ] && continue
               # glibc must never be replaced by a bundled copy
               [ "$p" = "libc6" ] && continue
-              # GCC runtime: the distro owns it, and bullseye's copy carries
-              # an exact "gcc-10-base (= 10.2.1-6)" Depends that cannot
-              # configure on Kylin (different gcc-10-base) — it cascades into
-              # every package depending on libgomp1 (libqt5gui5, tesseract4)
+              # GCC runtime: the distro owns it. Bundling it buys nothing on
+              # a healthy system and exact-version Depends of libstdc++/gcc
+              # runtime packages are a classic configure-failure cascade
+              # when they disagree with the target's toolchain packages
               [ "$p" = "libgomp1" ] && continue
               cp "$f" "${PKGDIR}/usr/share/flameshot-ocr/deps/"
             done
@@ -291,7 +283,7 @@ jobs:
           # 5.15, so an older system Qt (the Kylin V10 SP1 desktop ships
           # 5.12) must be upgraded - all libqt5* packages together. For every
           # other package only fill gaps: never replace what the distro has
-          # (Kylin customizes its X11/GL/krb5 stack, and bullseye copies can
+          # (Kylin customizes its X11/GL/krb5 stack, and closure copies from
           # carry exact-version Depends like "libgl1 (= libglx0)" that blow
           # up mid-install when mixed with Kylin's).
           is_qt() { case "$1" in libqt5*) return 0 ;; *) return 1 ;; esac; }
@@ -317,12 +309,11 @@ jobs:
           done
           if [ -n "$MISSING" ]; then
             # single dpkg call so packages configure in dependency order.
-            # --force-depends-version: the bundled bullseye packages encode
-            # bullseye's X11 core versions in their Depends ("libx11-xcb1
-            # (>= 2:1.7.2)"); Kylin's own customized, older stack satisfies
-            # the name-level dependency and works at runtime — the
-            # verify-on-kylin job is what proves that. Version clauses from
-            # a different distro carry no truth on this one.
+            # --force-depends-version is defensive: the closure normally comes
+            # from the same archive as the target (versions match exactly),
+            # but if the archive moved between build and install, version
+            # clauses from a different snapshot carry no truth on this
+            # machine — name-level dependencies are still enforced.
             dpkg -i --force-depends-version $MISSING
           else
             echo "nothing to install"
@@ -650,11 +641,12 @@ jobs:
             `journalctl -u flameshot-ocr-deps`), or run
             `sudo /usr/share/flameshot-ocr/install-deps.sh` once.
 
-          Built in a Debian bullseye container (glibc 2.31) and
-          install-verified in a real Kylin V10 SP1 (2503) container before
-          publishing. Requires glibc >= 2.31: Kylin V20 / Ubuntu Kylin
-          (Ubuntu 20.04 base), UOS/deepin desktops, Debian 11+. Older systems
-          (UOS 20, glibc 2.28) are not supported — glibc cannot be bundled.
+          Built in a real Kylin V10 SP1 (2503) container (glibc 2.31, Qt
+          5.12, Kylin's own package archive) and install-verified on a clean
+          Kylin V10 SP1 base image before publishing. Requires glibc >= 2.31:
+          Kylin V20 / Ubuntu Kylin (Ubuntu 20.04 base), UOS/deepin desktops,
+          Debian 11+. Older systems (UOS 20, glibc 2.28) are not supported —
+          glibc cannot be bundled.
           If a distro flameshot package is installed, remove it first (the
           binary is /usr/bin/flameshot).
           EOF
