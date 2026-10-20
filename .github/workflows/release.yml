@@ -316,8 +316,14 @@ jobs:
             MISSING="$MISSING $f"
           done
           if [ -n "$MISSING" ]; then
-            # single dpkg call so packages configure in dependency order
-            dpkg -i $MISSING
+            # single dpkg call so packages configure in dependency order.
+            # --force-depends-version: the bundled bullseye packages encode
+            # bullseye's X11 core versions in their Depends ("libx11-xcb1
+            # (>= 2:1.7.2)"); Kylin's own customized, older stack satisfies
+            # the name-level dependency and works at runtime — the
+            # verify-on-kylin job is what proves that. Version clauses from
+            # a different distro carry no truth on this one.
+            dpkg -i --force-depends-version $MISSING
           else
             echo "nothing to install"
           fi
