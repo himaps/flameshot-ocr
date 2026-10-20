@@ -265,6 +265,11 @@ jobs:
               [ "$(dpkg-deb -f "$f" Essential)" = "yes" ] && continue
               # glibc must never be replaced by a bundled copy
               [ "$p" = "libc6" ] && continue
+              # GCC runtime: the distro owns it, and bullseye's copy carries
+              # an exact "gcc-10-base (= 10.2.1-6)" Depends that cannot
+              # configure on Kylin (different gcc-10-base) — it cascades into
+              # every package depending on libgomp1 (libqt5gui5, tesseract4)
+              [ "$p" = "libgomp1" ] && continue
               cp "$f" "${PKGDIR}/usr/share/flameshot-ocr/deps/"
             done
             cat > "${PKGDIR}/usr/share/flameshot-ocr/install-deps.sh" <<'SH'
@@ -542,11 +547,13 @@ jobs:
       - name: Install the GUI runtime libraries a Kylin desktop provides
         # base 档容器没有桌面运行库；真实麒麟桌面自带。显式从麒麟归档安装，
         # 同时验证 deb 的运行库假设（包名与版本）在真实麒麟源里都成立。
+        # libgomp1 is on the list because libqt5gui5 and libtesseract4 need
+        # it but the bundled closure deliberately excludes GCC runtime.
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             libxkbcommon0 libxkbcommon-x11-0 libwayland-client0 libx11-6 libxcursor1 \
-            libxi6 libxrandr2 libgl1 libegl1 libfontconfig1 libfreetype6
+            libxi6 libxrandr2 libgl1 libegl1 libfontconfig1 libfreetype6 libgomp1
 
       - name: Install the offline deb (dpkg -i, as an offline user would)
         run: |
@@ -562,9 +569,22 @@ jobs:
       - name: Run the bundled dependency installer (no systemd in the container)
         # The postinst schedules install-deps.sh via systemd-run when
         # libraries are missing; a container has no init system, so the
-        # documented manual fallback IS the offline install path.
+        # documented manual fallback IS the offline install path. Capture the
+        # full output — a bare tail hides the "dpkg: error processing package
+        # X" lines between the "Setting up ..." lines.
         run: |
-          /usr/share/flameshot-ocr/install-deps.sh 2>&1 | tail -40
+          set +e
+          /usr/share/flameshot-ocr/install-deps.sh > /tmp/install-deps.log 2>&1
+          rc=$?
+          set -e
+          tail -40 /tmp/install-deps.log
+          if [ "$rc" -ne 0 ]; then
+            {
+              echo "---- install-deps.sh failed (rc=$rc), dpkg errors: ----"
+              grep -E "dpkg: error|depends on .*; however|Errors were encountered" /tmp/install-deps.log || true
+            } >&2
+            exit "$rc"
+          fi
 
       - name: ldd gate — zero missing libraries
         run: |
