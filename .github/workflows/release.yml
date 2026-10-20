@@ -382,13 +382,21 @@ jobs:
           VERSION="${{ steps.ver.outputs.version }}"
           tar -C staging -czf "flameshot-ocr-${VERSION}-${{ matrix.osarch }}.tar.gz" . 2>&1 | tee -a package.log
 
+      - name: Collect release files
+        run: |
+          # flatten: the artifact is downloaded verbatim by the verify job and
+          # publish, so keep the debs and tarball at the archive root instead
+          # of inside pkg/
+          mkdir -p dist
+          cp -a pkg/*.deb dist/
+          cp -a *.tar.gz dist/
+          ls -l dist/
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: flameshot-ocr-kylin-${{ matrix.osarch }}
-          path: |
-            pkg/*.deb
-            *.tar.gz
+          path: dist/*
           if-no-files-found: error
 
       - name: Re-emit the failing build log tail as annotations
