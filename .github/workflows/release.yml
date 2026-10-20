@@ -281,6 +281,15 @@ jobs:
           DIR="$(cd "$(dirname "$0")" && pwd)/deps"
           cd "$DIR"
           MISSING=""
+          # Qt 5.x minor releases are ABI-compatible for apps built against
+          # older Qt, but not the other way round: the binary is built on Qt
+          # 5.15, so an older system Qt (the Kylin V10 SP1 desktop ships
+          # 5.12) must be upgraded - all libqt5* packages together. For every
+          # other package only fill gaps: never replace what the distro has
+          # (Kylin customizes its X11/GL/krb5 stack, and bullseye copies can
+          # carry exact-version Depends like "libgl1 (= libglx0)" that blow
+          # up mid-install when mixed with Kylin's).
+          is_qt() { case "$1" in libqt5*) return 0 ;; *) return 1 ;; esac; }
           for f in *.deb; do
             pkg="$(dpkg-deb -f "$f" Package)"
             ver="$(dpkg-deb -f "$f" Version)"
@@ -288,11 +297,12 @@ jobs:
             case "$stat" in
               ii*)
                 inst="$(dpkg-query -W -f='${Version}' "$pkg" 2>/dev/null || true)"
-                if dpkg --compare-versions "${inst:-0}" ge "$ver"; then
-                  echo "$pkg: system $inst is up to date, using it"
+                if is_qt "$pkg" && ! dpkg --compare-versions "${inst:-0}" ge "$ver"; then
+                  echo "$pkg: system $inst is older, upgrading with $f ($ver)"
+                else
+                  echo "$pkg: system has $inst, keeping it"
                   continue
                 fi
-                echo "$pkg: system $inst is older, upgrading with $f ($ver)"
                 ;;
               *)
                 echo "$pkg: missing, will install $f ($ver)"
@@ -326,15 +336,18 @@ jobs:
             echo "flameshot-ocr: ERROR: /usr/bin/flameshot is missing; the package payload is broken." >&2
             exit 1
           fi
+          # ldd cannot see Qt symbol versions: the Kylin V10 SP1 desktop's Qt
+          # 5.12 "resolves" every lib of a binary built on Qt 5.15, and the
+          # app still fails at startup. Do not gate on ldd here - always
+          # schedule the installer; it is version-aware and finishes instantly
+          # when nothing needs changing.
           MISSING="$(ldd /usr/bin/flameshot 2>/dev/null | awk '/not found/ {print $1}')"
-          if [ -z "$MISSING" ]; then
-            echo "flameshot-ocr: all runtime libraries present, nothing to do."
-            exit 0
+          if [ -n "$MISSING" ]; then
+            echo "flameshot-ocr: missing runtime libraries:"
+            echo "$MISSING" | sed 's/^/  /'
           fi
-          echo "flameshot-ocr: missing runtime libraries:"
-          echo "$MISSING" | sed 's/^/  /'
           if command -v systemd-run >/dev/null 2>&1; then
-            echo "flameshot-ocr: auto-installing them from the bundled offline deps in 10s"
+            echo "flameshot-ocr: resolving bundled runtime deps in 10s (installs only what is missing, or older system Qt)"
             echo "  (same as running: sudo /usr/share/flameshot-ocr/install-deps.sh)"
             systemd-run --on-active=10 --quiet --unit=flameshot-ocr-deps \
               /usr/share/flameshot-ocr/install-deps.sh 2>/dev/null \

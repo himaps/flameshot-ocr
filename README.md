@@ -146,11 +146,11 @@ Release 提供两个 deb 变体，按需二选一（文件名格式：`flameshot
 
     sudo dpkg -i flameshot-ocr-<版本>-linux-<架构>-offline.deb
 
-安装结束时 postinst 会用 `ldd` 检测缺失的运行库：**全部齐备则无事发生；有缺失则自动通过 systemd 延迟 10 秒执行依赖安装**（等 dpkg 锁释放，等同手动执行下述脚本，结果在 `journalctl -u flameshot-ocr-deps`）。systemd 不可用时回退为提示手动执行：
+安装结束时 postinst 会通过 systemd 延迟 10 秒执行一次依赖校验安装（等 dpkg 锁释放，等同手动执行下述脚本，结果在 `journalctl -u flameshot-ocr-deps`）：**没有要装的就直接结束；有缺失库、或系统的 Qt5 比包内版本旧（麒麟 V10 SP1 桌面自带 Qt 5.12，本程序按 5.15 构建），则自动安装/升级**。systemd 不可用时回退为提示手动执行：
 
     sudo /usr/share/flameshot-ocr/install-deps.sh
 
-脚本逻辑（版本感知）：逐个检查 `deps/` 里的依赖包，**系统已安装且版本不低的直接用系统的；系统缺失或版本更旧的，用包内副本安装/升级**（合并成一次 `dpkg -i` 调用，由 dpkg 按依赖顺序配置）。`deps/` 是构建时按 Depends 递归展开的完整闭包——麒麟 V20（Ubuntu 20.04 基座）与 Debian 对部分库的包名不同（如 libicu63/libicu66），不同名的库可以共存，逐层展开才能保证离线 `dpkg -i` 不缺依赖。执行完再做一次 `ldd` 校验，明确报告"全部就绪"或仍缺失的库。
+脚本逻辑（版本感知、分类施策）：逐个检查 `deps/` 里的依赖包——**Qt5 库（libqt5\*）在系统版本更低时用包内副本升级**（Qt5 小版本间向前 ABI 兼容，升级不影响系统里其他 Qt 应用；反向不兼容，5.15 构建的程序不能跑在 5.12 上，而 `ldd` 只看 soname 看不出这种差别）；**其余库只补缺，不覆盖发行版自带版本**（麒麟对 X11/GL/krb5 栈有自己的定制，bullseye 副本还可能带 `libgl1 (= libglx0)` 这类严格同版本依赖，混装会把系统栈搞坏）。合并成一次 `dpkg -i` 调用，由 dpkg 按依赖顺序配置。`deps/` 是构建时按 Depends 递归展开的完整闭包——麒麟 V20（Ubuntu 20.04 基座）与 Debian 对部分库的包名不同（如 libicu63/libicu66），不同名的库可以共存，逐层展开才能保证离线 `dpkg -i` 不缺依赖。执行完再做一次 `ldd` 校验，明确报告"全部就绪"或仍缺失的库。
 
 OCR 数据说明：离线包内含英文训练数据（`tesseract-ocr-eng`），开箱即可识别英文。其他语言（`tesseract-ocr-chi-sim` 等）是独立的数据包，离线机需要在有网环境下载后手动 `dpkg -i`，或把 `.traineddata` 直接放进 `/usr/share/tesseract-ocr/4.00/tessdata/`。
 
@@ -189,6 +189,7 @@ OCR 数据说明：离线包内含英文训练数据（`tesseract-ocr-eng`），
 14. **postinst 对载荷缺失要大声报错**。若 `/usr/bin/flameshot` 不在，`ldd` 会静默输出空结果，"无缺失库"的判定会把坏包当健康包放行；脚本开头显式检查主程序存在，缺失即 `exit 1`，让 dpkg 把包标记为配置失败而不是假装装好了。
 15. **真实麒麟容器验证 + 钉日期 tag**。bullseye 只是 glibc 同基线的近似，"运行库假设"（包名与版本在麒麟源里成立）要靠真实归档检验：distrotwin/kylin 容器从麒麟公开 apt 源自举（`v10sp1` = 桌面 V10 SP1 2503，glibc 2.31 / GCC 9.3 / Ubuntu 20.04 血脉）。CI 必须钉带日期的 tag（如 `v10sp1-base-amd64-20260903`）——滚动 tag 会随重建漂移，`latest` 甚至会跨大版本把 glibc 从 2.31 推到 2.38。验证按离线用户真实路径走：装麒麟桌面运行库（同时验证了包名假设）→ `dpkg -i` 离线包 → 手动跑 `install-deps.sh`（容器无 systemd，恰好走文档写的手动回退路径）→ `ldd` 零缺失 → `eng.traineddata` 就位 → `flameshot --version`。Release 发布以该 job 通过为前置条件。
 16. **无凭据也能诊断 CI**。Actions logs API 对匿名请求 401/403，job 页面日志靠前端加载——本机无 gh CLI / token 时两者都读不到；**check-run annotations 是公开 API**。工作流在失败时把日志最后 30 行重发为 10 notice + 10 warning + 10 error 注解（每级每步上限 10 条，title 带"距末尾第几行"防合并），用 `commits/{sha}/check-runs` 匿名可读；静默 `set -e` 死亡用 `set -x` + `PS4='+L$LINENO: '` 让失败命令自己报行号。完整日志兜底推 `ci-logs` 分支。
+17. **离线闭包的安装策略必须分类施策（真实麒麟容器里炸出来的）**。bullseye 全量"版本旧就升级"在麒麟 V10 SP1 上会坏事：麒麟对 X11/GL/krb5 栈有自己的定制，bullseye 副本盖上去时 mesa 的严格同版本依赖（`libgl1 (= libglx0)`）在单次 `dpkg -i` 里级联失败 16 个包。正确策略：**Qt5 库（libqt5\*）系统更旧就升级**（麒麟 V10 SP1 桌面 UKUI 自带 Qt 5.12.8，本程序按 5.15 构建，反向 ABI 不兼容；Qt5 向前兼容，升级不伤其他 Qt 应用）；**其余包只补缺、永不覆盖**已安装版本。postinst 也不能用 `ldd` 门控——soname 能解析不代表符号版本够（`ldd` 看不出 `Qt_5.15` 缺失），所以无条件延迟 10 秒跑版本感知的安装脚本，无事时它自己秒退。
 
 ## 复用本工作流（其他 Qt 项目）
 
