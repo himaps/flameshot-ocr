@@ -152,6 +152,8 @@ glibc 硬边界：产物要求目标机 glibc ≥ 2.31——麒麟 V20 / V10 SP1
 
 脚本逻辑（版本感知、分类施策）：**Qt5 库（libqt5\*）系统版本更低时用包内副本升级**（Qt5 向前 ABI 兼容，升级不伤系统里其他 Qt 应用）；**其余库只补缺，不覆盖发行版自带版本**。包内闭包（`deps/`）与构建同源（麒麟公开归档），含 Qt5、Tesseract 与**中文+英文 traineddata**，装完自动 `ldd` 复验并报告"全部就绪"或仍缺失清单。
 
+OCR 排查：每次识别尝试都会在家目录 `~/flameshot-ocr-ocr-log.txt` 追加分步日志（tesseract 版本、各候选 tessdata 路径的 Init 结果与数据文件存在性），**失败也先写后执行**——日志最后一行就是出事现场。识别不工作时把该文件发回来即可定位。
+
 ## 构建踩坑记录（构建环境演变：bullseye → 真实麒麟容器）
 
 构建环境从 Debian bullseye 近似基线迁到真实麒麟 V10 SP1 容器（`ghcr.io/distrotwin/kylin`，devel 档编译、base 档验证），期间在 GitHub 原生 runner 上遇到的问题与解决方法，供后续同类型 Qt 产品参考：
