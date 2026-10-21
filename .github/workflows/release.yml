@@ -141,34 +141,35 @@ jobs:
         run: |
           make -C build install DESTDIR="$PWD/staging" 2>&1 | tee stage.log
 
-      - name: Download pinned tessdata (same data as the distro language packs)
+      - name: Extract tessdata from the distro language packages
         run: |
           set -o pipefail
           {
             set -e
-            # tesseract-ocr/tessdata at the exact commit the Kylin/Debian
-            # language packages are built from (version string
-            # 4.00~git30-7274cfa). The offline deb ships these files in
-            # /usr/share/flameshot-ocr/tessdata and the app initializes
-            # from there first, so OCR never depends on the vendor
-            # libtesseract's compiled-in default path or on system
-            # language packages.
-            COMMIT=7274cfa
-            mkdir -p tessdata
-            for f in chi_sim eng osd; do
-              for attempt in 1 2 3 4 5; do
-                if curl -sfL --max-time 300 -o "tessdata/$f.traineddata" \
-                  "https://raw.githubusercontent.com/tesseract-ocr/tessdata/$COMMIT/$f.traineddata"; then
-                  break
-                fi
-                echo "download $f.traineddata failed (attempt $attempt), retrying in 20s" >&2
-                if [ "$attempt" = "5" ]; then
-                  exit 1
-                fi
-                sleep 20
-              done
+            # Take the traineddata files from the very Kylin archive the app
+            # is built in (dpkg -x of the language packages): byte-identical
+            # to the distro's data, no external download, versions pinned by
+            # the archive itself. The offline deb ships these files in
+            # /usr/share/flameshot-ocr/tessdata and the app initializes from
+            # there first, so OCR never depends on the vendor libtesseract's
+            # compiled-in default path or on system language packages.
+            mkdir -p tessdata /tmp/tessdata-debs
+            cd /tmp/tessdata-debs
+            apt-get download tesseract-ocr-chi-sim tesseract-ocr-eng \
+              tesseract-ocr-osd
+            for f in *.deb; do
+              dpkg -x "$f" extract/
             done
+            find extract -name '*.traineddata' \
+              -exec cp {} "$OLDPWD/tessdata/" \;
+            cd "$OLDPWD"
             ls -l tessdata/
+            for f in chi_sim eng osd; do
+              if [ ! -s "tessdata/$f.traineddata" ]; then
+                echo "ERROR: $f.traineddata was not extracted" >&2
+                exit 1
+              fi
+            done
             sha256sum tessdata/*.traineddata
           } 2>&1 | tee tessdata.log
 
