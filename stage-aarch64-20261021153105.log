@@ -1,0 +1,165 @@
+make: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[1]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[  0%] Automatic MOC and UIC for target QtColorWidgets
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[  0%] Built target QtColorWidgets_autogen
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 12%] Built target QtColorWidgets
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 13%] Automatic MOC and UIC for target QtColorWidgetsPlugin
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 13%] Built target QtColorWidgetsPlugin_autogen
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 20%] Built target QtColorWidgetsPlugin
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 21%] Automatic MOC for target SingleApplication
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 21%] Built target SingleApplication_autogen
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 23%] Built target SingleApplication
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 23%] Automatic MOC and UIC for target flameshot
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 23%] Built target flameshot_autogen
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[100%] Built target flameshot
+make[1]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+Install the project...
+-- Install configuration: "Release"
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/lib/aarch64-linux-gnu/libQtColorWidgets.a
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/ColorListWidget
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/bound_color_selector.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_wheel.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/gradient_list_model.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_line_edit.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/BoundColorSelector
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_delegate.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/harmony_color_wheel.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/abstract_widget_list.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_list_widget.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/HueSlider
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/gradient_helper.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_preview.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_dialog.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/ColorDialog
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/GradientEditor
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/ColorSelector
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/colorwidgets_global.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_palette_model.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_wheel_private.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/gradient_editor.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_utils.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/AbstractWidgetList
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/gradient_slider.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_2d_slider.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/qt_compatibility.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/GradientSlider
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/ColorDelegate
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/GradientListModel
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_names.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/swatch.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_selector.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_palette.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/ColorWheel
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/hue_slider.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/ColorPreview
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/HarmonyColorWheel
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/color_palette_widget.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/gradient_delegate.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/QtColorWidgets_version.h
+-- Up-to-date: /__w/flameshot-ocr/flameshot-ocr/staging/usr/include/QtColorWidgets/colorwidgets_global.hpp
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/lib/aarch64-linux-gnu/cmake/QtColorWidgets/QtColorWidgets.cmake
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/lib/aarch64-linux-gnu/cmake/QtColorWidgets/QtColorWidgets-release.cmake
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/lib/aarch64-linux-gnu/cmake/QtColorWidgets/qtcolorwidgets-targets.cmake
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/lib/aarch64-linux-gnu/cmake/QtColorWidgets/qtcolorwidgets-targets-release.cmake
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/lib/aarch64-linux-gnu/cmake/QtColorWidgets/qtcolorwidgets-config.cmake
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/lib/aarch64-linux-gnu/cmake/QtColorWidgets/qtcolorwidgets-config-version.cmake
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/lib/aarch64-linux-gnu/pkgconfig/QtColorWidgets.pc
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/bin/flameshot
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/applications
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/applications/org.flameshot.Flameshot.desktop
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/zsh
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/zsh/site-functions
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/zsh/site-functions/_flameshot
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/metainfo
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/metainfo/org.flameshot.Flameshot.metainfo.xml
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor/128x128
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor/128x128/apps
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor/128x128/apps/org.flameshot.Flameshot.png
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor/128x128/apps/flameshot.png
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor/scalable
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor/scalable/apps
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor/scalable/apps/flameshot.svg
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor/scalable/apps/org.flameshot.Flameshot.svg
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor/48x48
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor/48x48/apps
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor/48x48/apps/org.flameshot.Flameshot.png
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/icons/hicolor/48x48/apps/flameshot.png
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/fish
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/fish/vendor_completions.d
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/fish/vendor_completions.d/flameshot.fish
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/bash-completion
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/bash-completion/completions
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/bash-completion/completions/flameshot
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/man
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/man/man1
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/man/man1/flameshot.1
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/dbus-1
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/dbus-1/interfaces
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/dbus-1/interfaces/org.flameshot.Flameshot.xml
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/dbus-1/services
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/dbus-1/services/org.flameshot.Flameshot.service
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_bg.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_ca.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_cs.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_de_DE.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_el.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_en.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_es.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_eu.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_fa.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_fi.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_fr.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_gl.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_grc.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_he.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_hu.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_id.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_it_IT.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_ja.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_ka.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_ko.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_nb_NO.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_nl_NL.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_nl.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_pl.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_pt_BR.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_ru.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_sk.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_sr_SP.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_sv_SE.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_tr.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_uk.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_vi.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_zh_CN.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_zh_HK.qm
+-- Installing: /__w/flameshot-ocr/flameshot-ocr/staging/usr/share/flameshot/translations/Internationalization_zh_TW.qm
+make: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'

@@ -1,0 +1,349 @@
+-- The CXX compiler identification is GNU 9.3.0
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test Wall_FLAG_SUPPORTED
+-- Performing Test Wall_FLAG_SUPPORTED - Success
+-- Performing Test pedantic_FLAG_SUPPORTED
+-- Performing Test pedantic_FLAG_SUPPORTED - Success
+-- Performing Test Wextra_FLAG_SUPPORTED
+-- Performing Test Wextra_FLAG_SUPPORTED - Success
+CMake Warning at cmake/Cache.cmake:28 (message):
+  ccache is enabled but was not found.  Not using it
+Call Stack (most recent call first):
+  CMakeLists.txt:102 (include)
+
+
+-- Found PkgConfig: /usr/bin/pkg-config (found version "0.29.1") 
+-- Checking for module 'tesseract'
+--   Found tesseract, version 4.1.1
+-- Checking for module 'lept'
+--   Found lept, version 1.79.0
+Flameshot predefined color palette large: false
+-- Found Git: /usr/bin/git (found version "2.25.1") 
+git found: /usr/bin/git in version     2.25.1
+FLAMESHOT_GIT_HASH: 6584c89f
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /__w/flameshot-ocr/flameshot-ocr/build
+make: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[1]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+Scanning dependencies of target QtColorWidgets_autogen
+Scanning dependencies of target SingleApplication_autogen
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[  1%] Automatic MOC and UIC for target QtColorWidgets
+[  1%] Automatic MOC for target SingleApplication
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[  1%] Built target SingleApplication_autogen
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+Scanning dependencies of target SingleApplication
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[  3%] Building CXX object _deps/singleapplication-build/CMakeFiles/SingleApplication.dir/SingleApplication_autogen/mocs_compilation.cpp.o
+[  3%] Building CXX object _deps/singleapplication-build/CMakeFiles/SingleApplication.dir/singleapplication.cpp.o
+[  3%] Building CXX object _deps/singleapplication-build/CMakeFiles/SingleApplication.dir/singleapplication_p.cpp.o
+[  3%] Linking CXX static library libSingleApplication.a
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[  3%] Built target SingleApplication
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[  3%] Built target QtColorWidgets_autogen
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[  3%] Automatic RCC for resources/QtColorWidgets/color_widgets.qrc
+Scanning dependencies of target QtColorWidgets
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[  5%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/bound_color_selector.cpp.o
+[  5%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/abstract_widget_list.cpp.o
+[  5%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/QtColorWidgets_autogen/mocs_compilation.cpp.o
+[  5%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_2d_slider.cpp.o
+[  6%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_delegate.cpp.o
+[  6%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_dialog.cpp.o
+[  7%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_line_edit.cpp.o
+[  7%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_list_widget.cpp.o
+[  8%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_names.cpp.o
+[  8%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_palette.cpp.o
+[  9%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_palette_model.cpp.o
+[  9%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_palette_widget.cpp.o
+[ 10%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_preview.cpp.o
+[ 10%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_selector.cpp.o
+[ 11%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_utils.cpp.o
+[ 11%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/color_wheel.cpp.o
+[ 12%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/gradient_slider.cpp.o
+[ 12%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/hue_slider.cpp.o
+[ 13%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/swatch.cpp.o
+[ 13%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/gradient_editor.cpp.o
+[ 14%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/harmony_color_wheel.cpp.o
+[ 14%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/src/QtColorWidgets/gradient_list_model.cpp.o
+[ 15%] Building CXX object _deps/qtcolorwidgets-build/CMakeFiles/QtColorWidgets.dir/QtColorWidgets_autogen/CRZPDLJRNK/qrc_color_widgets.cpp.o
+[ 15%] Linking CXX static library libQtColorWidgets.a
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 15%] Built target QtColorWidgets
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+Scanning dependencies of target flameshot_autogen
+Scanning dependencies of target QtColorWidgetsPlugin_autogen
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 16%] Automatic MOC and UIC for target flameshot
+[ 16%] Automatic MOC and UIC for target QtColorWidgetsPlugin
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 16%] Built target QtColorWidgetsPlugin_autogen
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+Scanning dependencies of target QtColorWidgetsPlugin
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 17%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/color_preview_plugin.cpp.o
+[ 17%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/QtColorWidgetsPlugin_autogen/mocs_compilation.cpp.o
+[ 18%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/color_wheel_plugin.cpp.o
+[ 18%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/color_widget_plugin_collection.cpp.o
+[ 19%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/gradient_slider_plugin.cpp.o
+[ 19%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/hue_slider_plugin.cpp.o
+[ 20%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/color_selector_plugin.cpp.o
+[ 20%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/color_list_plugin.cpp.o
+[ 21%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/swatch_plugin.cpp.o
+[ 21%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/color_palette_widget_plugin.cpp.o
+[ 22%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/color_2d_slider_plugin.cpp.o
+[ 22%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/color_line_edit_plugin.cpp.o
+[ 23%] Building CXX object _deps/qtcolorwidgets-build/color_widgets_designer_plugin/CMakeFiles/QtColorWidgetsPlugin.dir/gradient_editor_plugin.cpp.o
+[ 23%] Linking CXX shared library libQtColorWidgetsPlugin-Qt2.so
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 23%] Built target QtColorWidgetsPlugin
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 23%] Built target flameshot_autogen
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 24%] Automatic RCC for ../data/graphics.qrc
+[ 24%] Generating Internationalization_bg.qm
+[ 24%] Generating Internationalization_cs.qm
+[ 25%] Generating Internationalization_ca.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_cs.qm'...
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_bg.qm'...
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_ca.qm'...
+    Generated 416 translation(s) (383 finished and 33 unfinished)
+    Generated 416 translation(s) (413 finished and 3 unfinished)
+    Generated 416 translation(s) (355 finished and 61 unfinished)
+[ 26%] Generating Internationalization_el.qm
+[ 26%] Generating Internationalization_de_DE.qm
+[ 27%] Generating Internationalization_en.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_en.qm'...
+    Generated 0 translation(s) (0 finished and 0 unfinished)
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_el.qm'...
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_de_DE.qm'...
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+[ 28%] Generating Internationalization_es.qm
+[ 28%] Generating Internationalization_eu.qm
+[ 28%] Generating Internationalization_fa.qm
+[ 29%] Generating Internationalization_fi.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_eu.qm'...
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_fa.qm'...
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_fi.qm'...
+    Generated 416 translation(s) (413 finished and 3 unfinished)
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_es.qm'...
+    Generated 416 translation(s) (416 finished and 0 unfinished)
+[ 30%] Generating Internationalization_fr.qm
+[ 30%] Generating Internationalization_gl.qm
+[ 30%] Generating Internationalization_grc.qm
+[ 31%] Generating Internationalization_he.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_fr.qm'...
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_gl.qm'...
+    Generated 379 translation(s) (377 finished and 2 unfinished)
+    Ignored 17 untranslated source text(s)
+    Generated 416 translation(s) (379 finished and 37 unfinished)
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_grc.qm'...
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_he.qm'...
+    Generated 264 translation(s) (264 finished and 0 unfinished)
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+[ 31%] Generating Internationalization_hu.qm
+[ 32%] Generating Internationalization_it_IT.qm
+[ 32%] Generating Internationalization_id.qm
+[ 34%] Generating Internationalization_ja.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_hu.qm'...
+    Generated 416 translation(s) (364 finished and 52 unfinished)
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_it_IT.qm'...
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_id.qm'...
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+    Generated 416 translation(s) (385 finished and 31 unfinished)
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_ja.qm'...
+    Generated 416 translation(s) (360 finished and 56 unfinished)
+[ 34%] Generating Internationalization_ka.qm
+[ 35%] Generating Internationalization_ko.qm
+[ 35%] Generating Internationalization_nb_NO.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_nb_NO.qm'...
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_ka.qm'...
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_ko.qm'...
+    Generated 416 translation(s) (340 finished and 76 unfinished)
+    Generated 416 translation(s) (339 finished and 77 unfinished)
+[ 36%] Generating Internationalization_nl_NL.qm
+    Generated 416 translation(s) (342 finished and 74 unfinished)
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_nl_NL.qm'...
+[ 36%] Generating Internationalization_nl.qm
+[ 37%] Generating Internationalization_pl.qm
+    Generated 416 translation(s) (384 finished and 32 unfinished)
+[ 37%] Generating Internationalization_pt_BR.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_nl.qm'...
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_pl.qm'...
+    Generated 237 translation(s) (187 finished and 50 unfinished)
+    Ignored 179 untranslated source text(s)
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_pt_BR.qm'...
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+[ 38%] Generating Internationalization_ru.qm
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+[ 38%] Generating Internationalization_sk.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_ru.qm'...
+[ 38%] Generating Internationalization_sv_SE.qm
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+[ 39%] Generating Internationalization_sr_SP.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_sk.qm'...
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_sv_SE.qm'...
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+    Generated 416 translation(s) (365 finished and 51 unfinished)
+[ 40%] Generating Internationalization_tr.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_sr_SP.qm'...
+    Generated 416 translation(s) (345 finished and 71 unfinished)
+[ 40%] Generating Internationalization_uk.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_tr.qm'...
+[ 41%] Generating Internationalization_vi.qm
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+[ 41%] Generating Internationalization_zh_CN.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_uk.qm'...
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_vi.qm'...
+    Generated 416 translation(s) (375 finished and 41 unfinished)
+[ 42%] Generating Internationalization_zh_HK.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_zh_CN.qm'...
+    Generated 416 translation(s) (414 finished and 2 unfinished)
+[ 42%] Generating Internationalization_zh_TW.qm
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_zh_HK.qm'...
+    Generated 416 translation(s) (339 finished and 77 unfinished)
+Updating '/__w/flameshot-ocr/flameshot-ocr/build/src/Internationalization_zh_TW.qm'...
+    Generated 416 translation(s) (413 finished and 3 unfinished)
+Scanning dependencies of target flameshot
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make[2]: Entering directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[ 44%] Building CXX object src/CMakeFiles/flameshot.dir/cli/commandlineparser.cpp.o
+[ 44%] Building CXX object src/CMakeFiles/flameshot.dir/flameshot_autogen/mocs_compilation.cpp.o
+[ 44%] Building CXX object src/CMakeFiles/flameshot.dir/cli/commandargument.cpp.o
+[ 44%] Building CXX object src/CMakeFiles/flameshot.dir/cli/commandoption.cpp.o
+[ 44%] Building CXX object src/CMakeFiles/flameshot.dir/config/buttonlistview.cpp.o
+[ 45%] Building CXX object src/CMakeFiles/flameshot.dir/config/cacheutils.cpp.o
+[ 45%] Building CXX object src/CMakeFiles/flameshot.dir/config/clickablelabel.cpp.o
+[ 46%] Building CXX object src/CMakeFiles/flameshot.dir/config/colorpickereditmode.cpp.o
+[ 46%] Building CXX object src/CMakeFiles/flameshot.dir/config/colorpickereditor.cpp.o
+[ 47%] Building CXX object src/CMakeFiles/flameshot.dir/config/configerrordetails.cpp.o
+[ 47%] Building CXX object src/CMakeFiles/flameshot.dir/config/configresolver.cpp.o
+[ 48%] Building CXX object src/CMakeFiles/flameshot.dir/config/configwindow.cpp.o
+[ 48%] Building CXX object src/CMakeFiles/flameshot.dir/config/extendedslider.cpp.o
+[ 49%] Building CXX object src/CMakeFiles/flameshot.dir/config/filenameeditor.cpp.o
+[ 49%] Building CXX object src/CMakeFiles/flameshot.dir/config/generalconf.cpp.o
+[ 50%] Building CXX object src/CMakeFiles/flameshot.dir/config/setshortcutwidget.cpp.o
+[ 51%] Building CXX object src/CMakeFiles/flameshot.dir/config/shortcutswidget.cpp.o
+[ 51%] Building CXX object src/CMakeFiles/flameshot.dir/config/strftimechooserwidget.cpp.o
+[ 52%] Building CXX object src/CMakeFiles/flameshot.dir/config/styleoverride.cpp.o
+[ 52%] Building CXX object src/CMakeFiles/flameshot.dir/config/uicoloreditor.cpp.o
+[ 53%] Building CXX object src/CMakeFiles/flameshot.dir/config/visualseditor.cpp.o
+[ 53%] Building CXX object src/CMakeFiles/flameshot.dir/core/capturerequest.cpp.o
+[ 54%] Building CXX object src/CMakeFiles/flameshot.dir/core/flameshot.cpp.o
+[ 54%] Building CXX object src/CMakeFiles/flameshot.dir/core/flameshotdaemon.cpp.o
+[ 55%] Building CXX object src/CMakeFiles/flameshot.dir/core/flameshotdbusadapter.cpp.o
+[ 55%] Building CXX object src/CMakeFiles/flameshot.dir/core/qguiappcurrentscreen.cpp.o
+[ 56%] Building CXX object src/CMakeFiles/flameshot.dir/utils/abstractlogger.cpp.o
+[ 56%] Building CXX object src/CMakeFiles/flameshot.dir/utils/filenamehandler.cpp.o
+[ 57%] Building CXX object src/CMakeFiles/flameshot.dir/utils/screengrabber.cpp.o
+[ 57%] Building CXX object src/CMakeFiles/flameshot.dir/utils/confighandler.cpp.o
+[ 58%] Building CXX object src/CMakeFiles/flameshot.dir/utils/systemnotification.cpp.o
+[ 58%] Building CXX object src/CMakeFiles/flameshot.dir/utils/valuehandler.cpp.o
+[ 59%] Building CXX object src/CMakeFiles/flameshot.dir/utils/screenshotsaver.cpp.o
+[ 59%] Building CXX object src/CMakeFiles/flameshot.dir/utils/globalvalues.cpp.o
+[ 60%] Building CXX object src/CMakeFiles/flameshot.dir/utils/desktopfileparse.cpp.o
+[ 60%] Building CXX object src/CMakeFiles/flameshot.dir/utils/desktopinfo.cpp.o
+[ 61%] Building CXX object src/CMakeFiles/flameshot.dir/utils/pathinfo.cpp.o
+[ 61%] Building CXX object src/CMakeFiles/flameshot.dir/utils/colorutils.cpp.o
+[ 62%] Building CXX object src/CMakeFiles/flameshot.dir/utils/history.cpp.o
+[ 62%] Building CXX object src/CMakeFiles/flameshot.dir/utils/strfparse.cpp.o
+[ 63%] Building CXX object src/CMakeFiles/flameshot.dir/utils/request.cpp.o
+[ 63%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/panel/sidepanelwidget.cpp.o
+[ 64%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/panel/utilitypanel.cpp.o
+[ 64%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/panel/colorgrabwidget.cpp.o
+[ 65%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capture/buttonhandler.cpp.o
+[ 65%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capture/capturebutton.cpp.o
+[ 67%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capture/capturetoolbutton.cpp.o
+[ 67%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capture/capturewidget.cpp.o
+[ 68%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capture/colorpicker.cpp.o
+[ 68%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capture/hovereventfilter.cpp.o
+[ 69%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capture/overlaymessage.cpp.o
+[ 69%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capture/notifierbox.cpp.o
+[ 70%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capture/selectionwidget.cpp.o
+[ 70%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capture/magnifierwidget.cpp.o
+[ 71%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capture/modificationcommand.cpp.o
+[ 71%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capturelauncher.cpp.o
+[ 72%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/draggablewidgetmaker.cpp.o
+[ 72%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/imagelabel.cpp.o
+[ 73%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/trayicon.cpp.o
+[ 73%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/infowindow.cpp.o
+[ 74%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/loadspinner.cpp.o
+[ 74%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/notificationwidget.cpp.o
+[ 75%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/orientablepushbutton.cpp.o
+[ 75%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/uploadhistory.cpp.o
+[ 76%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/uploadlineitem.cpp.o
+[ 76%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/colorpickerwidget.cpp.o
+[ 77%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/imguploaddialog.cpp.o
+[ 77%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/capture/capturetoolobjects.cpp.o
+[ 78%] Building CXX object src/CMakeFiles/flameshot.dir/widgets/updatenotificationwidget.cpp.o
+[ 78%] Building CXX object src/CMakeFiles/flameshot.dir/tools/arrow/arrowtool.cpp.o
+[ 79%] Building CXX object src/CMakeFiles/flameshot.dir/tools/pixelate/pixelatetool.cpp.o
+[ 79%] Building CXX object src/CMakeFiles/flameshot.dir/tools/circle/circletool.cpp.o
+[ 80%] Building CXX object src/CMakeFiles/flameshot.dir/tools/circlecount/circlecounttool.cpp.o
+[ 80%] Building CXX object src/CMakeFiles/flameshot.dir/tools/copy/copytool.cpp.o
+[ 81%] Building CXX object src/CMakeFiles/flameshot.dir/tools/exit/exittool.cpp.o
+[ 81%] Building CXX object src/CMakeFiles/flameshot.dir/tools/sizeincrease/sizeincreasetool.cpp.o
+[ 82%] Building CXX object src/CMakeFiles/flameshot.dir/tools/sizedecrease/sizedecreasetool.cpp.o
+[ 82%] Building CXX object src/CMakeFiles/flameshot.dir/tools/imgupload/storages/imgur/imguruploader.cpp.o
+[ 83%] Building CXX object src/CMakeFiles/flameshot.dir/tools/imgupload/storages/imguploaderbase.cpp.o
+[ 83%] Building CXX object src/CMakeFiles/flameshot.dir/tools/imgupload/imguploadertool.cpp.o
+[ 84%] Building CXX object src/CMakeFiles/flameshot.dir/tools/imgupload/imguploadermanager.cpp.o
+[ 84%] Building CXX object src/CMakeFiles/flameshot.dir/tools/launcher/applaunchertool.cpp.o
+[ 85%] Building CXX object src/CMakeFiles/flameshot.dir/tools/launcher/applauncherwidget.cpp.o
+[ 85%] Building CXX object src/CMakeFiles/flameshot.dir/tools/launcher/launcheritemdelegate.cpp.o
+[ 86%] Building CXX object src/CMakeFiles/flameshot.dir/tools/launcher/openwithprogram.cpp.o
+[ 86%] Building CXX object src/CMakeFiles/flameshot.dir/tools/launcher/terminallauncher.cpp.o
+[ 87%] Building CXX object src/CMakeFiles/flameshot.dir/tools/line/linetool.cpp.o
+[ 87%] Building CXX object src/CMakeFiles/flameshot.dir/tools/marker/markertool.cpp.o
+[ 88%] Building CXX object src/CMakeFiles/flameshot.dir/tools/move/movetool.cpp.o
+[ 88%] Building CXX object src/CMakeFiles/flameshot.dir/tools/pencil/penciltool.cpp.o
+[ 89%] Building CXX object src/CMakeFiles/flameshot.dir/tools/pin/pintool.cpp.o
+[ 89%] Building CXX object src/CMakeFiles/flameshot.dir/tools/pin/pinwidget.cpp.o
+[ 90%] Building CXX object src/CMakeFiles/flameshot.dir/tools/rectangle/rectangletool.cpp.o
+[ 90%] Building CXX object src/CMakeFiles/flameshot.dir/tools/redo/redotool.cpp.o
+[ 91%] Building CXX object src/CMakeFiles/flameshot.dir/tools/save/savetool.cpp.o
+[ 91%] Building CXX object src/CMakeFiles/flameshot.dir/tools/accept/accepttool.cpp.o
+[ 92%] Building CXX object src/CMakeFiles/flameshot.dir/tools/invert/inverttool.cpp.o
+[ 92%] Building CXX object src/CMakeFiles/flameshot.dir/tools/selection/selectiontool.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/flameshot.dir/tools/ocr/ocrtool.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/flameshot.dir/tools/text/textconfig.cpp.o
+[ 94%] Building CXX object src/CMakeFiles/flameshot.dir/tools/text/texttool.cpp.o
+[ 94%] Building CXX object src/CMakeFiles/flameshot.dir/tools/text/textwidget.cpp.o
+[ 95%] Building CXX object src/CMakeFiles/flameshot.dir/tools/undo/undotool.cpp.o
+[ 95%] Building CXX object src/CMakeFiles/flameshot.dir/tools/abstractactiontool.cpp.o
+[ 96%] Building CXX object src/CMakeFiles/flameshot.dir/tools/abstractpathtool.cpp.o
+[ 96%] Building CXX object src/CMakeFiles/flameshot.dir/tools/abstracttwopointtool.cpp.o
+[ 97%] Building CXX object src/CMakeFiles/flameshot.dir/tools/capturecontext.cpp.o
+[ 97%] Building CXX object src/CMakeFiles/flameshot.dir/tools/toolfactory.cpp.o
+[ 98%] Building CXX object src/CMakeFiles/flameshot.dir/main.cpp.o
+[ 98%] Building CXX object src/CMakeFiles/flameshot.dir/flameshot_autogen/IJ3KGTTQ5V/qrc_graphics.cpp.o
+[100%] Linking CXX executable flameshot
+make[2]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+[100%] Built target flameshot
+make[1]: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
+make: Leaving directory '/__w/flameshot-ocr/flameshot-ocr/build'
