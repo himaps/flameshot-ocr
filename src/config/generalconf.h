@@ -99,6 +99,7 @@ private:
     void initShowSelectionGeometry();
     void initJpegQuality();
     void initReverseArrow();
+    void initOcrDebugLog();
 
     void _updateComponents(bool allowEmptySavePath);
 
@@ -125,6 +126,7 @@ private:
     QCheckBox* m_antialiasingPinZoom;
     QCheckBox* m_saveLastRegion;
     QCheckBox* m_uploadWithoutConfirmation;
+    QCheckBox* m_ocrDebugLog;
     QPushButton* m_importButton;
     QPushButton* m_exportButton;
     QPushButton* m_resetButton;

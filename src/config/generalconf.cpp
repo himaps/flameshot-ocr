@@ -69,6 +69,7 @@ GeneralConf::GeneralConf(QWidget* parent)
     initSquareMagnifier();
     initJpegQuality();
     initReverseArrow();
+    initOcrDebugLog();
     // this has to be at the end
     initConfigButtons();
     updateComponents();
@@ -99,6 +100,7 @@ void GeneralConf::_updateComponents(bool allowEmptySavePath)
     m_squareMagnifier->setChecked(config.squareMagnifier());
     m_saveLastRegion->setChecked(config.saveLastRegion());
     m_reverseArrow->setChecked(config.reverseArrow());
+    m_ocrDebugLog->setChecked(config.ocrDebugLog());
 
 #if !defined(Q_OS_WIN)
     m_autoCloseIdleDaemon->setChecked(config.autoCloseIdleDaemon());
@@ -867,6 +869,19 @@ void GeneralConf::initReverseArrow()
 
     connect(
       m_reverseArrow, &QCheckBox::clicked, this, &GeneralConf::setReverseArrow);
+}
+
+void GeneralConf::initOcrDebugLog()
+{
+    m_ocrDebugLog = new QCheckBox(tr("Record OCR debug log"), this);
+    m_ocrDebugLog->setToolTip(
+      tr("Append each OCR attempt to flameshot-ocr-ocr-log.txt in the home "
+         "directory (helps diagnose OCR problems; keep off otherwise)"));
+    m_scrollAreaLayout->addWidget(m_ocrDebugLog);
+
+    connect(m_ocrDebugLog, &QCheckBox::clicked, this, [](bool checked) {
+        ConfigHandler().setOcrDebugLog(checked);
+    });
 }
 
 void GeneralConf::setSelGeoHideTime(int v)

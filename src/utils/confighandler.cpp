@@ -131,6 +131,8 @@ static QMap<class QString, QSharedPointer<ValueHandler>>
     OPTION("showSelectionGeometryHideTime", LowerBoundedInt       (0, 3000)),
     OPTION("jpegQuality", BoundedInt     (0,100,75)),
     OPTION("reverseArrow"                    ,Bool               ( false      )),
+    // OCR debug log: opt-in diagnostics written to the home directory
+    OPTION("ocrDebugLog"                     ,Bool               ( false      )),
 };
 
 static QMap<QString, QSharedPointer<KeySequence>> recognizedShortcuts = {

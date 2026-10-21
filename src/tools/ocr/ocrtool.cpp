@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2017-2019 Alejandro Sirgo Rica & Contributors
 
 #include "ocrtool.h"
+#include "src/utils/confighandler.h"
 #include <QApplication>
 #include <QClipboard>
 #include <QDateTime>
@@ -26,6 +27,11 @@ QString ocrLogPath()
 
 void ocrLog(const QString& line)
 {
+    // Opt-in diagnostics: nothing is written unless the user enables
+    // "Record OCR debug log" in the configuration.
+    if (!ConfigHandler().ocrDebugLog()) {
+        return;
+    }
     QFile f(ocrLogPath());
     if (f.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
         QTextStream ts(&f);
