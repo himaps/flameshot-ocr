@@ -140,38 +140,53 @@ QString OcrTool::performOCR(const QPixmap& pixmap)
     tesseract::TessBaseAPI api;
     int rc = 0;
 
-    // Offline builds ship chi_sim + eng traineddata. Try the default path
-    // first (covering a correctly provisioned system), then explicit
-    // well-known locations — a vendor libtesseract with a mismatched
-    // compiled-in tessdata path is the most likely failure on real Kylin
-    // machines. End() the API after a failed Init before retrying.
-    ocrLog("step: Init(nullptr, chi_sim+eng)");
-    rc = api.Init(nullptr, "chi_sim+eng");
-    ocrLog(QString("  rc=%1").arg(rc));
-    if (rc != 0) {
-        api.End();
-        ocrLog("step: Init(nullptr, eng)");
-        rc = api.Init(nullptr, "eng");
-        ocrLog(QString("  rc=%1").arg(rc));
+    // Offline builds ship traineddata beside the app (under
+    // APP_PREFIX/share/flameshot-ocr/tessdata); initializing from there
+    // first makes OCR immune to the vendor libtesseract's compiled-in
+    // default path and to whatever system language packages exist. When
+    // the bundled data is absent (regular deb) the chain falls through to
+    // the compiled-in default and then to well-known system locations.
+    // End() the API after a failed Init before retrying.
+    const QString bundledDir =
+      QStringLiteral(APP_PREFIX) + "/share/flameshot-ocr/tessdata";
+    struct InitAttempt
+    {
+        QString datapath;
+        QString langs;
+    };
+    QList<InitAttempt> attempts;
+    if (QFileInfo::exists(bundledDir + "/chi_sim.traineddata")) {
+        attempts.append({ bundledDir, QStringLiteral("chi_sim+eng") });
     }
-    if (rc != 0) {
-        api.End();
-        const QStringList dirs = tessdataCandidates();
-        for (const QString& dir : dirs) {
-            ocrLog(QString("step: Init(%1, eng)").arg(dir));
-            rc = api.Init(dir.toUtf8().constData(), "eng");
-            ocrLog(QString("  rc=%1").arg(rc));
-            if (rc == 0) {
-                break;
-            }
-            api.End();
+    attempts.append({ QString(), QStringLiteral("chi_sim+eng") });
+    attempts.append({ QString(), QStringLiteral("eng") });
+    for (const QString& dir : tessdataCandidates()) {
+        attempts.append({ dir, QStringLiteral("eng") });
+    }
+
+    for (const InitAttempt& attempt : attempts) {
+        const char* datapath =
+          attempt.datapath.isNull()
+            ? nullptr
+            : attempt.datapath.toUtf8().constData();
+        ocrLog(QString("step: Init(%1, %2)")
+                 .arg(attempt.datapath.isNull() ? QStringLiteral("(default)")
+                                                : attempt.datapath,
+                      attempt.langs));
+        rc = api.Init(datapath, attempt.langs.toUtf8().constData());
+        ocrLog(QString("  rc=%1").arg(rc));
+        if (rc == 0) {
+            break;
         }
+        api.End();
     }
     if (rc != 0) {
         ocrLog("RESULT: OCR FAILED - tesseract Init failed in every combination");
         ocrLog("traineddata presence per candidate directory:");
         const QStringList langs = { "chi_sim", "eng", "osd" };
-        for (const QString& dir : tessdataCandidates()) {
+        QStringList probeDirs = tessdataCandidates();
+        probeDirs.prepend(bundledDir);
+        for (const QString& dir : probeDirs) {
             for (const QString& lang : langs) {
                 ocrLog(QString("  %1/%2.traineddata: %3")
                          .arg(dir, lang)

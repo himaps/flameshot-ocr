@@ -141,6 +141,37 @@ jobs:
         run: |
           make -C build install DESTDIR="$PWD/staging" 2>&1 | tee stage.log
 
+      - name: Download pinned tessdata (same data as the distro language packs)
+        run: |
+          set -o pipefail
+          {
+            set -e
+            # tesseract-ocr/tessdata at the exact commit the Kylin/Debian
+            # language packages are built from (version string
+            # 4.00~git30-7274cfa). The offline deb ships these files in
+            # /usr/share/flameshot-ocr/tessdata and the app initializes
+            # from there first, so OCR never depends on the vendor
+            # libtesseract's compiled-in default path or on system
+            # language packages.
+            COMMIT=7274cfa
+            mkdir -p tessdata
+            for f in chi_sim eng osd; do
+              for attempt in 1 2 3 4 5; do
+                if curl -sfL --max-time 300 -o "tessdata/$f.traineddata" \
+                  "https://raw.githubusercontent.com/tesseract-ocr/tessdata/$COMMIT/$f.traineddata"; then
+                  break
+                fi
+                echo "download $f.traineddata failed (attempt $attempt), retrying in 20s" >&2
+                if [ "$attempt" = "5" ]; then
+                  exit 1
+                fi
+                sleep 20
+              done
+            done
+            ls -l tessdata/
+            sha256sum tessdata/*.traineddata
+          } 2>&1 | tee tessdata.log
+
       - name: Assert the glibc 2.31 baseline on the binary
         # glibc symbol versions are frozen into the binary at link time and
         # are the hard floor for every target machine. Fail loudly here
@@ -225,13 +256,12 @@ jobs:
               [ -n "$p" ] && TOP="$TOP $p"
             done
             echo "offline deps direct closure:$TOP"
-            # ldd only sees shared libraries linked at startup. The OCR
-            # engine also reads traineddata at runtime — seed the Chinese +
-            # English data packages the app asks for — and Qt loads SVG icon
-            # rendering as a dlopen'd plugin from libqt5svg5 (invisible to
-            # ldd because of --as-needed). Skip them and OCR or the toolbar
-            # icons break on offline machines.
-            TOP="$TOP tesseract-ocr-chi-sim tesseract-ocr-eng tesseract-ocr-osd libqt5svg5"
+            # The traineddata travels inside the app itself (tessdata/
+            # directory, copied below) — the system language packages are
+            # not needed and not seeded. ldd-invisible runtime requirement
+            # that remains: Qt loads SVG icon rendering as a dlopen'd plugin
+            # from libqt5svg5 (--as-needed keeps it out of DT_NEEDED).
+            TOP="$TOP libqt5svg5"
             # Expand to the full recursive Depends closure: target distros
             # package some libraries under different names, so the bundle
             # must contain every indirect dependency for offline
@@ -263,6 +293,13 @@ jobs:
               [ "$p" = "libc6" ] && continue
               cp "$f" "${PKGDIR}/usr/share/flameshot-ocr/deps/"
             done
+            # Bundle the traineddata beside the app: the app initializes
+            # OCR from this directory first, so recognition works no matter
+            # what the vendor libtesseract considers its default path and
+            # no matter which system language packages exist.
+            mkdir -p "${PKGDIR}/usr/share/flameshot-ocr/tessdata"
+            cp -a tessdata/*.traineddata \
+              "${PKGDIR}/usr/share/flameshot-ocr/tessdata/"
             cat > "${PKGDIR}/usr/share/flameshot-ocr/install-deps.sh" <<'SH'
           #!/bin/sh
           # Install or upgrade the runtime dependencies bundled in ./deps:
@@ -362,10 +399,10 @@ jobs:
           Description: Screenshot tool with built-in OCR (Kylin V20 ${ARCH} offline build)
            Same app as the regular deb, plus a bundled runtime dependency
            closure (deps/) and install-deps.sh for machines without network
-           access, including the Simplified Chinese and English Tesseract
-           traineddata. Libraries already present on the system are used;
-           only missing ones are installed from the bundle. Never replaces
-           glibc.
+           access, with the Simplified Chinese and English Tesseract
+           traineddata bundled beside the app. Libraries already present on
+           the system are used; only missing ones are installed from the
+           bundle. Never replaces glibc.
            Requires glibc >= 2.31 (Kylin V20 / V10 SP1 / Debian 11 era or
            newer).
           EOF
@@ -378,8 +415,8 @@ jobs:
               || { echo "ERROR: app binary missing from ${DEBOUT}" >&2; exit 1; }
             grep -F "install-deps.sh" /tmp/pkglist-offline.txt > /dev/null \
               || { echo "ERROR: install-deps.sh missing from ${DEBOUT}" >&2; exit 1; }
-            grep -F "tesseract-ocr-chi-sim" /tmp/pkglist-offline.txt > /dev/null \
-              || { echo "ERROR: Chinese traineddata package missing from ${DEBOUT}" >&2; exit 1; }
+            grep -F "usr/share/flameshot-ocr/tessdata/chi_sim.traineddata" /tmp/pkglist-offline.txt > /dev/null \
+              || { echo "ERROR: bundled Chinese traineddata missing from ${DEBOUT}" >&2; exit 1; }
             N="$(grep -c "flameshot-ocr/deps/.*\.deb" /tmp/pkglist-offline.txt || true)"
             if [ "${N:-0}" -lt 10 ]; then
               echo "ERROR: offline deb carries only ${N:-0} dependency debs — the closure is missing" >&2
@@ -611,11 +648,12 @@ jobs:
           Assets (file name format: flameshot-ocr-<version>-kylin-<arch>[-offline].deb):
           - regular deb — a Kylin/UOS/deepin desktop provides the runtime
             libraries the app loads at run time; OCR needs libtesseract4,
-            liblept5 and tesseract-ocr-eng/tesseract-ocr-chi-sim from the
-            distro archive
+            liblept5 and the traineddata packages (tesseract-ocr-eng,
+            tesseract-ocr-chi-sim) from the distro archive
           - -offline deb — for machines without network access: bundles the
             runtime dependency closure (Qt5, Tesseract, X11 stack) and the
-            Chinese + English traineddata. After `dpkg -i` the installer
+            Chinese + English traineddata inside the app (no system language
+            packages needed). After `dpkg -i` the installer
             runs automatically (10s delay, `journalctl -u flameshot-ocr-deps`),
             or run `sudo /usr/share/flameshot-ocr/install-deps.sh` once.
 

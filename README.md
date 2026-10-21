@@ -115,6 +115,11 @@ package is installed, dpkg refuses with a file conflict — remove it first:
 
     sudo apt remove flameshot && sudo dpkg -i flameshot-ocr-*.deb
 
+常规包不带 OCR 训练数据，识别功能需要系统安装 `tesseract-ocr-eng` 与
+`tesseract-ocr-chi-sim`（有网时 `apt install` 即可）；**离线包已内置中文+英文
+训练数据**（`/usr/share/flameshot-ocr/tessdata/`，与发行版语言包同源、版本
+钉死），不依赖任何系统语言包，也不受 libtesseract 编译期默认路径影响。
+
 To build a deb by hand:
 
     sudo apt install g++ cmake pkg-config git qtbase5-dev libqt5svg5-dev \
@@ -150,7 +155,7 @@ glibc 硬边界：产物要求目标机 glibc ≥ 2.31——麒麟 V20 / V10 SP1
 
     sudo /usr/share/flameshot-ocr/install-deps.sh
 
-脚本逻辑（版本感知、分类施策）：**Qt5 库（libqt5\*）系统版本更低时用包内副本升级**（Qt5 向前 ABI 兼容，升级不伤系统里其他 Qt 应用）；**其余库只补缺，不覆盖发行版自带版本**。包内闭包（`deps/`）与构建同源（麒麟公开归档），含 Qt5、Tesseract 与**中文+英文 traineddata**，装完自动 `ldd` 复验并报告"全部就绪"或仍缺失清单。
+脚本逻辑（版本感知、分类施策）：**Qt5 库（libqt5\*）系统版本更低时用包内副本升级**（Qt5 向前 ABI 兼容，升级不伤系统里其他 Qt 应用）；**其余库只补缺，不覆盖发行版自带版本**。包内闭包（`deps/`）与构建同源（麒麟公开归档），含 Qt5 与 Tesseract 运行栈；**中文+英文训练数据随应用内置**（`/usr/share/flameshot-ocr/tessdata/`，CI 钉 commit 从上游 tessdata 下载、与发行版语言包同源），装完自动 `ldd` 复验并报告"全部就绪"或仍缺失清单。
 
 OCR 排查：每次识别尝试都会在家目录 `~/flameshot-ocr-ocr-log.txt` 追加分步日志（tesseract 版本、各候选 tessdata 路径的 Init 结果与数据文件存在性），**失败也先写后执行**——日志最后一行就是出事现场。识别不工作时把该文件发回来即可定位。
 
